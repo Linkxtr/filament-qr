@@ -6,18 +6,16 @@ use Closure;
 use Filament\Tables\Columns\Column;
 use Linkxtr\FilamentQr\Concerns\HasPayloadFormatters;
 use Linkxtr\FilamentQr\Concerns\HasQrCodeStyling;
+use Linkxtr\FilamentQr\Concerns\HasQrInteractions;
 use Linkxtr\FilamentQr\Services\QrCodeRenderer;
 
 class QrCodeColumn extends Column
 {
     use HasPayloadFormatters;
     use HasQrCodeStyling;
+    use HasQrInteractions;
 
     protected string $view = 'filament-qr::tables.columns.qr-code-column';
-
-    protected bool | Closure $isDownloadable = false;
-
-    protected bool | Closure $isClickableToPreview = true;
 
     protected ?Closure $payloadResolver = null;
 
@@ -28,33 +26,11 @@ class QrCodeColumn extends Column
         return $this;
     }
 
-    public function downloadable(bool | Closure $condition = true): static
-    {
-        $this->isDownloadable = $condition;
-
-        return $this;
-    }
-
-    public function isDownloadable(): bool
-    {
-        return (bool) $this->evaluate($this->isDownloadable);
-    }
-
-    public function previewable(bool | Closure $condition = true): static
-    {
-        $this->isClickableToPreview = $condition;
-
-        return $this;
-    }
-
-    public function isPreviewable(): bool
-    {
-        return (bool) $this->evaluate($this->isClickableToPreview);
-    }
-
     public function getQrPayload(): ?string
     {
-        $raw = $this->payloadResolver ? $this->evaluate($this->payloadResolver) : $this->getState();
+        $raw = $this->payloadResolver
+            ? $this->evaluate($this->payloadResolver)
+            : ($this->getState() ?? $this->evaluate($this->getStateUsing));
 
         return $this->resolveFormattedPayload($raw);
     }
@@ -80,8 +56,15 @@ class QrCodeColumn extends Column
             backgroundColor: $this->getQrBackgroundColor(),
             gradient: $this->getQrGradient(),
             eyeColors: $this->getQrEyeColors(),
+            eyeStyle: $this->getQrEyeStyle(),
+            internalEyeStyle: $this->getQrInternalEyeStyle(),
+            style: $this->getQrStyle(),
+            styleSize: $this->getQrStyleSize(),
             logoPath: $this->getQrLogoPath(),
-            logoSize: $this->getQrLogoSize()
+            logoSize: $this->getQrLogoSize(),
+            dpi: $this->getQrDpi(),
+            resolution: $this->getQrResolution(),
+            encoding: $this->getQrEncoding(),
         );
     }
 }

@@ -1,21 +1,68 @@
 <?php
 
 use Linkxtr\FilamentQr\Tables\Columns\QrCodeColumn;
+use Linkxtr\FilamentQr\Tests\Fixtures\Models\Record;
 
-it('can initialize qr code column', function () {
-    $column = QrCodeColumn::make('qr')
-        ->qrSize(200)
-        ->qrMargin(2)
-        ->qrColor('#000000');
+it('instantiates qr code column with defaults', function () {
+    $column = QrCodeColumn::make('code');
 
-    expect($column->getQrSize())->toBe(200);
-    expect($column->getQrMargin())->toBe(2);
-    expect($column->getQrColor())->toBe('#000000');
+    expect($column)->toBeInstanceOf(QrCodeColumn::class)
+        ->and($column->getQrFormat())->toBe('svg')
+        ->and($column->getQrSize())->toBe(160)
+        ->and($column->getQrMargin())->toBe(1)
+        ->and($column->getQrErrorCorrection())->toBe('M');
 });
 
-it('formats payload as wifi', function () {
-    $column = QrCodeColumn::make('wifi')
-        ->asWifi('Office-Guest', 'secret123', 'WPA');
+it('resolves payload correctly from state', function () {
+    $column = QrCodeColumn::make('qr')
+        ->state('https://linkxtr.com');
 
-    expect($column->getQrPayload())->toBe('WIFI:S:Office-Guest;T:WPA;P:secret123;H:false;;');
+    expect($column->getQrPayload())->toBe('https://linkxtr.com');
+});
+
+it('supports custom payload resolver callback', function () {
+    $record = new Record(['name' => 'Custom Target']);
+
+    $column = QrCodeColumn::make('qr')
+        ->record($record)
+        ->payload(fn (Record $record) => 'CUSTOM:'.$record->name);
+
+    expect($column->getQrPayload())->toBe('CUSTOM:Custom Target');
+});
+
+it('renders inline qr code data uri', function () {
+    $column = QrCodeColumn::make('qr')
+        ->state('Hello World');
+
+    $rendered = $column->renderQrCode();
+
+    expect($rendered)
+        ->toBeString()
+        ->toStartWith('data:image/svg+xml;base64,');
+});
+
+it('returns null when payload is empty', function () {
+    $column = QrCodeColumn::make('qr')
+        ->state('');
+
+    expect($column->renderQrCode())->toBeNull();
+});
+
+it('configures interactive preview and copy features', function () {
+    $column = QrCodeColumn::make('qr')
+        ->previewable(true)
+        ->previewSize(400)
+        ->previewHeading('Custom Heading')
+        ->copyable(true)
+        ->copyMessage('Payload saved!')
+        ->downloadable(true)
+        ->downloadFilename('my-code');
+
+    expect($column->isPreviewable())->toBeTrue()
+        ->and($column->getPreviewSize())->toBe(400)
+        ->and($column->getPreviewHeading())->toBe('Custom Heading')
+        ->and($column->isCopyable())->toBeTrue()
+        ->and($column->getCopyMessage())->toBe('Payload saved!')
+        ->and($column->isDownloadable())->toBeTrue()
+        ->and($column->getDownloadFilename())->toBe('my-code');
 });
