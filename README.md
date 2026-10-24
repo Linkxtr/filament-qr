@@ -4,9 +4,9 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/linkxtr/filament-qr.svg?style=flat-square)](https://packagist.org/packages/linkxtr/filament-qr)
 [![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/linkxtr/filament-qr/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/linkxtr/filament-qr/actions?query=workflow%3Arun-tests+branch%3Amain)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![PHP Version](https://img.shields.io/badge/PHP-8.2%20--%208.5-blue.svg?style=flat-square)](https://php.net)
-[![Laravel Version](https://img.shields.io/badge/Laravel-12%20%7C%2013-red.svg?style=flat-square)](https://laravel.com)
-[![Filament Version](https://img.shields.io/badge/Filament-3%20%7C%204%20%7C%205-orange.svg?style=flat-square)](https://filamentphp.com)
+[![PHP Version](https://img.shields.io/badge/PHP-8.2%20%7C%208.3%20%7C%208.4-blue.svg?style=flat-square)](https://php.net)
+[![Laravel Version](https://img.shields.io/badge/Laravel-10%20%7C%2011-red.svg?style=flat-square)](https://laravel.com)
+[![Filament Version](https://img.shields.io/badge/Filament-3-orange.svg?style=flat-square)](https://filamentphp.com)
 
 A clean, modern Filament plugin to generate, render, style, and export QR codes powered by [`linkxtr/laravel-qrcode`](https://github.com/Linkxtr/laravel-qrcode).
 
@@ -22,7 +22,7 @@ Seamlessly embed dynamic QR codes inside **Filament Table Columns**, display ric
 - **Fluent Styling**: Custom dimensions, quiet-zone margins, error correction levels (L, M, Q, H), and brand color palette tokens (`primary`, `success`, `danger`, `warning`, `info`, `gray`, or hex).
 - **Advanced Aesthetics**: Linear gradients, custom finder eye inner/outer colors, and embedded logo images.
 - **Built-in Payload Helpers**: Fluent formatters for Wi-Fi credentials, URLs, emails, SMS, and custom closures.
-- **Multi-Version Compatibility**: Supports **PHP 8.2 through 8.5**, **Laravel 12 and 13**, and **Filament 3, 4, and 5**.
+- **Multi-Version Compatibility**: Supports **PHP 8.2 through 8.4**, **Laravel 10 and 11**, and **Filament 3**.
 
 ---
 
@@ -105,7 +105,7 @@ Add a QR code column directly to any Filament Resource table schema:
 namespace App\Filament\Resources\OrderResource\Pages;
 
 use Filament\Tables\Table;
-use Linkxtr\FilamentQr\Tables\Columns\QrCodeColumn;
+use Linkxtr\filamentQr\Tables\Columns\QrCodeColumn;
 
 public function table(Table $table): Table
 {
@@ -154,33 +154,18 @@ QrCodeColumn::make('company_uuid')
     ->qrLogo(path: public_path('images/logo-icon.png'), size: 0.22);
 ```
 
-#### Custom Payload Resolution & Formatters
-
-Format payloads using built-in helpers or dynamically resolve payloads from the model record:
+#### Custom Payload Resolution
 
 ```php
-// Built-in Wi-Fi formatter
-QrCodeColumn::make('wifi_qr')
-    ->asWifi(
-        ssid: fn ($record) => $record->network_name,
-        password: fn ($record) => $record->network_password,
-        encryption: 'WPA'
-    );
-
-// Built-in URL formatter
-QrCodeColumn::make('invoice_url')
-    ->asUrl(fn ($record) => route('invoices.public.show', $record));
-
-// Custom formatter closure
-QrCodeColumn::make('payload')
-    ->formatPayloadUsing(fn ($record) => "ORDER-{$record->id}:{$record->total}");
+QrCodeColumn::make('custom_url')
+    ->payload(fn ($record) => route('orders.show', $record));
 ```
 
 ---
 
 ### 2. Infolist Entries (`QrCodeEntry`)
 
-Display large, high-contrast QR codes in resource view pages, relation managers, or modal slide-overs:
+Display QR codes in View/Edit Resource pages or slide-over modals:
 
 ```php
 namespace App\Filament\Resources\DeviceResource\Pages;
@@ -302,7 +287,7 @@ Every component implementing `HasQrCodeStyling` supports the following fluent me
 ### Release Highlights (v0.1.0)
 
 - Initial release of `linkxtr/filament-qr`.
-- First-class support for **Filament 3, 4, and 5**.
+- First-class support for **Filament 3** on **Laravel 10 and 11**.
 - Powered by `linkxtr/laravel-qrcode` v3.x.
 - Zero-configuration table column (`QrCodeColumn`) with dark mode support.
 - Rich infolist entry (`QrCodeEntry`) with mono-font payload inspector.
@@ -315,8 +300,8 @@ Every component implementing `HasQrCodeStyling` supports the following fluent me
 - [x] Canonical package name `linkxtr/filament-qr` registered in `composer.json`.
 - [x] Semantic versioning Git tag `v0.1.0` applied.
 - [x] Auto-discovery service provider configured under `extra.laravel.providers`.
-- [x] PHP compatibility matrix validated (`^8.2 || ^8.3 || ^8.4 || ^8.5`).
-- [x] Filament dependency configured for versions `^3.0 || ^4.0 || ^5.0`.
+- [x] PHP compatibility matrix validated (`^8.2 || ^8.3 || ^8.4`).
+- [x] Laravel dependency configured for versions `^10.0 || ^11.0`.
 - [x] Packagist GitHub webhook configured for automated release publishing.
 
 ---
