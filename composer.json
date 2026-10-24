@@ -1,0 +1,73 @@
+{
+  "name": "linkxtr/filament-qr",
+  "description": "A clean, modern Filament plugin to generate, render, style, and export QR codes powered by linkxtr/laravel-qrcode",
+  "keywords": [
+    "linkxtr",
+    "laravel",
+    "filament",
+    "filament-plugin",
+    "qrcode",
+    "qr-code"
+  ],
+  "homepage": "https://github.com/Linkxtr/filament-qr",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Khaled Sadek",
+      "email": "khaledsadek286@gmail.com",
+      "homepage": "https://github.com/khaled-sadek"
+    }
+  ],
+  "require": {
+    "php": "^8.2 || ^8.3 || ^8.4 || ^8.5",
+    "filament/filament": "^3.0 || ^4.0 || ^5.0",
+    "illuminate/contracts": "^11.0 || ^12.0 || ^13.0",
+    "illuminate/support": "^11.0 || ^12.0 || ^13.0",
+    "linkxtr/laravel-qrcode": "^3.0"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^9.0 || ^10.0 || ^11.0",
+    "pestphp/pest": "^3.0 || ^4.0",
+    "pestphp/pest-plugin-laravel": "^3.0 || ^4.0",
+    "pestphp/pest-plugin-type-coverage": "^3.0 || ^4.0",
+    "phpstan/phpstan": "^2.0",
+    "laravel/pint": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Linkxtr\\FilamentQr\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Linkxtr\\FilamentQr\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "lint": "pint --parallel",
+    "test:lint": "pint --parallel --test",
+    "test:types": "phpstan analyse --ansi",
+    "test:unit": "pest --parallel --colors=always",
+    "test": [
+      "@test:lint",
+      "@test:types",
+      "@test:unit"
+    ]
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true,
+      "phpstan/extension-installer": true
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Linkxtr\\FilamentQr\\FilamentQrServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
