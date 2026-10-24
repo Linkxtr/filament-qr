@@ -58,7 +58,16 @@ trait HasQrCodeStyling
 
     public function getQrSize(): int
     {
-        return (int) ($this->evaluateStylingValue($this->qrSize) ?? config('filament-qr.defaults.size', 160));
+        $size = $this->evaluateStylingValue($this->qrSize);
+        if (is_int($size)) {
+            return $size;
+        }
+        if (is_numeric($size)) {
+            return (int) $size;
+        }
+        $configSize = config('filament-qr.defaults.size', 160);
+
+        return is_numeric($configSize) ? (int) $configSize : 160;
     }
 
     public function qrMargin(int|Closure $margin): static
@@ -70,7 +79,16 @@ trait HasQrCodeStyling
 
     public function getQrMargin(): int
     {
-        return (int) ($this->evaluateStylingValue($this->qrMargin) ?? config('filament-qr.defaults.margin', 1));
+        $margin = $this->evaluateStylingValue($this->qrMargin);
+        if (is_int($margin)) {
+            return $margin;
+        }
+        if (is_numeric($margin)) {
+            return (int) $margin;
+        }
+        $configMargin = config('filament-qr.defaults.margin', 1);
+
+        return is_numeric($configMargin) ? (int) $configMargin : 1;
     }
 
     public function qrFormat(QrFormat|string|Closure $format): static
@@ -82,13 +100,23 @@ trait HasQrCodeStyling
 
     public function getQrFormat(): string
     {
-        $format = $this->evaluateStylingValue($this->qrFormat) ?? config('filament-qr.defaults.format', 'svg');
+        $format = $this->evaluateStylingValue($this->qrFormat);
 
         if ($format instanceof QrFormat) {
             return $format->value;
         }
 
-        return (string) $format;
+        if (is_string($format)) {
+            return $format;
+        }
+
+        if (is_scalar($format) || $format instanceof \Stringable) {
+            return (string) $format;
+        }
+
+        $configFormat = config('filament-qr.defaults.format', 'svg');
+
+        return is_string($configFormat) ? $configFormat : 'svg';
     }
 
     public function svg(): static
@@ -120,13 +148,23 @@ trait HasQrCodeStyling
 
     public function getQrErrorCorrection(): string
     {
-        $level = $this->evaluateStylingValue($this->qrErrorCorrection) ?? config('filament-qr.defaults.error_correction', 'M');
+        $level = $this->evaluateStylingValue($this->qrErrorCorrection);
 
         if ($level instanceof ErrorCorrectionLevel) {
             return $level->value;
         }
 
-        return (string) $level;
+        if (is_string($level)) {
+            return $level;
+        }
+
+        if (is_scalar($level) || $level instanceof \Stringable) {
+            return (string) $level;
+        }
+
+        $configLevel = config('filament-qr.defaults.error_correction', 'M');
+
+        return is_string($configLevel) ? $configLevel : 'M';
     }
 
     public function qrColor(string|Closure $color): static
@@ -138,9 +176,14 @@ trait HasQrCodeStyling
 
     public function getQrColor(): string
     {
-        $color = $this->evaluateStylingValue($this->qrColor) ?? config('filament-qr.defaults.color', '#000000');
+        $color = $this->evaluateStylingValue($this->qrColor);
+        $colorString = is_string($color) ? $color : (is_scalar($color) || $color instanceof \Stringable ? (string) $color : null);
+        if ($colorString === null) {
+            $configColor = config('filament-qr.defaults.color', '#000000');
+            $colorString = is_string($configColor) ? $configColor : '#000000';
+        }
 
-        return $this->resolveColorToken($color);
+        return $this->resolveColorToken($colorString);
     }
 
     public function qrBackgroundColor(string|Closure $color): static
@@ -152,9 +195,14 @@ trait HasQrCodeStyling
 
     public function getQrBackgroundColor(): string
     {
-        $color = $this->evaluateStylingValue($this->qrBackgroundColor) ?? config('filament-qr.defaults.background_color', '#ffffff');
+        $color = $this->evaluateStylingValue($this->qrBackgroundColor);
+        $colorString = is_string($color) ? $color : (is_scalar($color) || $color instanceof \Stringable ? (string) $color : null);
+        if ($colorString === null) {
+            $configColor = config('filament-qr.defaults.background_color', '#ffffff');
+            $colorString = is_string($configColor) ? $configColor : '#ffffff';
+        }
 
-        return $this->resolveColorToken($color);
+        return $this->resolveColorToken($colorString);
     }
 
     public function qrGradient(string|Closure $from, string|Closure $to, GradientType|string|Closure $type = 'vertical'): static
@@ -168,6 +216,9 @@ trait HasQrCodeStyling
         return $this;
     }
 
+    /**
+     * @return array{from: string, to: string, type?: string}|null
+     */
     /**
      * @return array{from: string, to: string, type?: string}|null
      */
@@ -185,39 +236,55 @@ trait HasQrCodeStyling
 
         $from = $this->evaluateStylingValue($gradient['from']);
         $to = $this->evaluateStylingValue($gradient['to']);
-        $rawType = $this->evaluateStylingValue($gradient['type'] ?? 'vertical');
+        $type = $this->evaluateStylingValue($gradient['type'] ?? 'vertical');
 
-        $type = $rawType instanceof GradientType ? $rawType->value : (string) $rawType;
+        if ($type instanceof GradientType) {
+            $type = $type->value;
+        }
+
+        $fromString = is_string($from) ? $from : (is_scalar($from) || $from instanceof \Stringable ? (string) $from : '');
+        $toString = is_string($to) ? $to : (is_scalar($to) || $to instanceof \Stringable ? (string) $to : '');
+        $typeString = is_string($type) ? $type : (is_scalar($type) || $type instanceof \Stringable ? (string) $type : 'vertical');
 
         return [
-            'from' => $this->resolveColorToken((string) $from),
-            'to' => $this->resolveColorToken((string) $to),
-            'type' => $type,
+            'from' => $this->resolveColorToken($fromString),
+            'to' => $this->resolveColorToken($toString),
+            'type' => $typeString,
         ];
     }
 
-    /**
-     * Set specific eye colors.
-     *
-     * @param  array<int, array{inner: string|Closure, outer?: string|Closure|null}>|Closure  $eyeColors
-     */
-    public function qrEyeColors(array|Closure $eyeColors): static
+    public function qrEyeColor(int $eyeIndex, string|Closure $inner, string|Closure|null $outer = null): static
     {
-        $this->qrEyeColors = $eyeColors;
+        if ($this->qrEyeColors === null || ! is_array($this->qrEyeColors)) {
+            $this->qrEyeColors = [];
+        }
+
+        $this->qrEyeColors[$eyeIndex] = [
+            'inner' => $inner,
+            'outer' => $outer,
+        ];
 
         return $this;
     }
 
     /**
-     * Shortcut to set all three eye colors simultaneously.
+     * @param  array<int, array{inner: string, outer?: string|null}>|string|Closure  $innerOrConfig
      */
-    public function qrEyeColor(string|Closure $inner, string|Closure|null $outer = null): static
+    public function qrEyeColors(string|array|Closure $innerOrConfig, string|Closure|null $outer = null): static
     {
-        $this->qrEyeColors = [
-            0 => ['inner' => $inner, 'outer' => $outer],
-            1 => ['inner' => $inner, 'outer' => $outer],
-            2 => ['inner' => $inner, 'outer' => $outer],
-        ];
+        if (is_array($innerOrConfig)) {
+            $this->qrEyeColors = $innerOrConfig;
+
+            return $this;
+        }
+
+        $this->qrEyeColors = [];
+        for ($i = 0; $i < 3; $i++) {
+            $this->qrEyeColors[$i] = [
+                'inner' => $innerOrConfig,
+                'outer' => $outer,
+            ];
+        }
 
         return $this;
     }
@@ -231,28 +298,34 @@ trait HasQrCodeStyling
             return null;
         }
 
-        $rawEyes = $this->evaluateStylingValue($this->qrEyeColors);
+        $raw = $this->evaluateStylingValue($this->qrEyeColors);
 
-        if (! is_array($rawEyes)) {
+        if (! is_array($raw)) {
             return null;
         }
 
+        /** @var array<int, array{inner: string, outer?: string|null}> $resolved */
         $resolved = [];
-        foreach ($rawEyes as $index => $eye) {
-            if (! is_array($eye) || ! isset($eye['inner'])) {
+        foreach ($raw as $index => $colors) {
+            if (! is_array($colors)) {
                 continue;
             }
 
-            $inner = $this->evaluateStylingValue($eye['inner']);
-            $outer = isset($eye['outer']) ? $this->evaluateStylingValue($eye['outer']) : null;
+            $inner = isset($colors['inner']) ? $this->evaluateStylingValue($colors['inner']) : null;
+            $outer = isset($colors['outer']) ? $this->evaluateStylingValue($colors['outer']) : null;
 
-            $resolved[(int) $index] = [
-                'inner' => $this->resolveColorToken((string) $inner),
-                'outer' => $outer !== null ? $this->resolveColorToken((string) $outer) : null,
-            ];
+            if ($inner !== null) {
+                $innerString = is_string($inner) ? $inner : (is_scalar($inner) || $inner instanceof \Stringable ? (string) $inner : '');
+                $outerString = $outer !== null ? (is_string($outer) ? $outer : (is_scalar($outer) || $outer instanceof \Stringable ? (string) $outer : null)) : null;
+
+                $resolved[(int) $index] = [
+                    'inner' => $this->resolveColorToken($innerString),
+                    'outer' => $outerString !== null ? $this->resolveColorToken($outerString) : null,
+                ];
+            }
         }
 
-        return $resolved;
+        return $resolved !== [] ? $resolved : null;
     }
 
     public function qrEyeStyle(EyeStyle|string|Closure $style): static
@@ -270,7 +343,11 @@ trait HasQrCodeStyling
             return $style->value;
         }
 
-        return $style !== null ? (string) $style : null;
+        if (is_string($style)) {
+            return $style;
+        }
+
+        return is_scalar($style) || $style instanceof \Stringable ? (string) $style : null;
     }
 
     public function qrInternalEyeStyle(EyeStyle|string|Closure $style): static
@@ -288,7 +365,11 @@ trait HasQrCodeStyling
             return $style->value;
         }
 
-        return $style !== null ? (string) $style : null;
+        if (is_string($style)) {
+            return $style;
+        }
+
+        return is_scalar($style) || $style instanceof \Stringable ? (string) $style : null;
     }
 
     public function qrStyle(QrStyle|string|Closure $style, float|Closure|null $size = null): static
@@ -309,14 +390,22 @@ trait HasQrCodeStyling
             return $style->value;
         }
 
-        return $style !== null ? (string) $style : null;
+        if (is_string($style)) {
+            return $style;
+        }
+
+        return is_scalar($style) || $style instanceof \Stringable ? (string) $style : null;
     }
 
     public function getQrStyleSize(): ?float
     {
         $size = $this->evaluateStylingValue($this->qrStyleSize);
 
-        return $size !== null ? (float) $size : null;
+        if (is_float($size)) {
+            return $size;
+        }
+
+        return is_numeric($size) ? (float) $size : null;
     }
 
     public function qrLogo(string|Closure $path, float|Closure $size = 0.2): static
@@ -329,12 +418,24 @@ trait HasQrCodeStyling
 
     public function getQrLogoPath(): ?string
     {
-        return $this->evaluateStylingValue($this->qrLogoPath);
+        $path = $this->evaluateStylingValue($this->qrLogoPath);
+
+        if (is_string($path)) {
+            return $path;
+        }
+
+        return is_scalar($path) || $path instanceof \Stringable ? (string) $path : null;
     }
 
     public function getQrLogoSize(): float
     {
-        return (float) ($this->evaluateStylingValue($this->qrLogoSize) ?? 0.2);
+        $size = $this->evaluateStylingValue($this->qrLogoSize);
+
+        if (is_float($size)) {
+            return $size;
+        }
+
+        return is_numeric($size) ? (float) $size : 0.2;
     }
 
     public function qrDpi(int|Closure $dpi): static
@@ -348,7 +449,11 @@ trait HasQrCodeStyling
     {
         $dpi = $this->evaluateStylingValue($this->qrDpi);
 
-        return $dpi !== null ? (int) $dpi : null;
+        if (is_int($dpi)) {
+            return $dpi;
+        }
+
+        return is_numeric($dpi) ? (int) $dpi : null;
     }
 
     public function qrResolution(int|Closure $resolution): static
@@ -362,7 +467,11 @@ trait HasQrCodeStyling
     {
         $res = $this->evaluateStylingValue($this->qrResolution);
 
-        return $res !== null ? (int) $res : null;
+        if (is_int($res)) {
+            return $res;
+        }
+
+        return is_numeric($res) ? (int) $res : null;
     }
 
     public function qrEncoding(string|Closure $encoding): static
@@ -374,7 +483,13 @@ trait HasQrCodeStyling
 
     public function getQrEncoding(): string
     {
-        return (string) ($this->evaluateStylingValue($this->qrEncoding) ?? 'UTF-8');
+        $encoding = $this->evaluateStylingValue($this->qrEncoding);
+
+        if (is_string($encoding)) {
+            return $encoding;
+        }
+
+        return is_scalar($encoding) || $encoding instanceof \Stringable ? (string) $encoding : 'UTF-8';
     }
 
     public function resolveColorToken(string $color): string

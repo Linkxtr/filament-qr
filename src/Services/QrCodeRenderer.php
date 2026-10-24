@@ -35,40 +35,26 @@ class QrCodeRenderer
         ?int $resolution = null,
         string $encoding = 'UTF-8'
     ): string {
-        $builder = QrCode::size($size)
+        $colorRgb = Rgb::parse($color);
+        $bgRgb = Rgb::parse($backgroundColor);
+
+        $builder = QrCode::format($format)
+            ->size($size)
             ->margin($margin)
-            ->format($format)
-            ->errorCorrection($errorCorrection);
-
-        if ($color) {
-            [$r, $g, $b] = $this->hexToRgb($color);
-            $builder = $builder->color($r, $g, $b);
-        }
-
-        if ($backgroundColor) {
-            [$br, $bg, $bb] = $this->hexToRgb($backgroundColor);
-            $builder = $builder->backgroundColor($br, $bg, $bb);
-        }
+            ->errorCorrection($errorCorrection)
+            ->color($colorRgb->red, $colorRgb->green, $colorRgb->blue)
+            ->backgroundColor($bgRgb->red, $bgRgb->green, $bgRgb->blue);
 
         if ($gradient) {
-            [$fr, $fg, $fb] = $this->hexToRgb($gradient['from']);
-            [$tr, $tg, $tb] = $this->hexToRgb($gradient['to']);
-            $gradType = $gradient['type'] ?? 'vertical';
-            $builder = $builder->gradient($fr, $fg, $fb, $tr, $tg, $tb, $gradType);
+            $from = $gradient['from'];
+            $to = $gradient['to'];
+            $type = $gradient['type'] ?? 'vertical';
+            $builder = $builder->gradient($from, $to, $type);
         }
 
         if ($eyeColors) {
-            foreach ($eyeColors as $index => $eye) {
-                if (! empty($eye['inner'])) {
-                    [$ir, $ig, $ib] = $this->hexToRgb($eye['inner']);
-                    $or = $ir;
-                    $og = $ig;
-                    $ob = $ib;
-                    if (! empty($eye['outer'])) {
-                        [$or, $og, $ob] = $this->hexToRgb($eye['outer']);
-                    }
-                    $builder = $builder->eyeColor((int) $index, $ir, $ig, $ib, $or, $og, $ob);
-                }
+            foreach ($eyeColors as $index => $colors) {
+                $builder = $builder->eyeColor((int) $index, $colors['inner'], $colors['outer'] ?? null);
             }
         }
 

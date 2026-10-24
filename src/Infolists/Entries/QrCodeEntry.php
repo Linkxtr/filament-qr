@@ -4,18 +4,31 @@ namespace Linkxtr\FilamentQr\Infolists\Entries;
 
 use Closure;
 use Filament\Infolists\Components\Entry;
+use Illuminate\Database\Eloquent\Model;
 use Linkxtr\FilamentQr\Concerns\HasPayloadFormatters;
 use Linkxtr\FilamentQr\Concerns\HasQrCodeStyling;
+use Linkxtr\FilamentQr\Concerns\HasQrInteractions;
 use Linkxtr\FilamentQr\Services\QrCodeRenderer;
 
 class QrCodeEntry extends Entry
 {
     use HasPayloadFormatters;
     use HasQrCodeStyling;
+    use HasQrInteractions;
 
     protected string $view = 'filament-qr::infolists.entries.qr-code-entry';
 
     protected ?Closure $payloadResolver = null;
+
+    /**
+     * @param  array<string, mixed>|class-string<Model>|Closure|Model|null  $record
+     */
+    public function record(Model|array|Closure|string|null $record): static
+    {
+        $this->model($record);
+
+        return $this;
+    }
 
     public function payload(Closure $callback): static
     {
@@ -26,7 +39,15 @@ class QrCodeEntry extends Entry
 
     public function getQrPayload(): ?string
     {
-        $raw = $this->payloadResolver ? $this->evaluate($this->payloadResolver) : $this->getState();
+        if ($this->payloadResolver) {
+            $raw = $this->evaluate($this->payloadResolver);
+        } else {
+            try {
+                $raw = $this->getState();
+            } catch (\Throwable) {
+                $raw = null;
+            }
+        }
 
         return $this->resolveFormattedPayload($raw);
     }
@@ -52,8 +73,15 @@ class QrCodeEntry extends Entry
             backgroundColor: $this->getQrBackgroundColor(),
             gradient: $this->getQrGradient(),
             eyeColors: $this->getQrEyeColors(),
+            eyeStyle: $this->getQrEyeStyle(),
+            internalEyeStyle: $this->getQrInternalEyeStyle(),
+            style: $this->getQrStyle(),
+            styleSize: $this->getQrStyleSize(),
             logoPath: $this->getQrLogoPath(),
-            logoSize: $this->getQrLogoSize()
+            logoSize: $this->getQrLogoSize(),
+            dpi: $this->getQrDpi(),
+            resolution: $this->getQrResolution(),
+            encoding: $this->getQrEncoding(),
         );
     }
 }

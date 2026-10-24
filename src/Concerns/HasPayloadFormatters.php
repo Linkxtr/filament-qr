@@ -27,12 +27,12 @@ trait HasPayloadFormatters
             $tVal = $this->evaluateFormattedValue($encryption, $raw);
             $hVal = (bool) $this->evaluateFormattedValue($hidden, $raw);
 
-            $s = $this->escapeWifiValue((string) $sVal);
-            $t = strtoupper((string) ($tVal ?? 'WPA'));
+            $s = $this->escapeWifiValue($this->formatString($sVal));
+            $t = strtoupper($this->formatString($tVal, 'WPA'));
             $h = $hVal ? 'true' : 'false';
 
             if ($pVal !== null && $pVal !== '') {
-                $p = $this->escapeWifiValue((string) $pVal);
+                $p = $this->escapeWifiValue($this->formatString($pVal));
                 $pPart = "P:{$p};";
             } elseif ($t === 'NOPASS' || $t === 'NONE') {
                 $t = 'NOPASS';
@@ -50,7 +50,7 @@ trait HasPayloadFormatters
         return $this->formatPayloadUsing(function ($raw) use ($url) {
             $value = $this->evaluateFormattedValue($url, $raw) ?? $raw;
 
-            return (string) $value;
+            return $this->formatString($value);
         });
     }
 
@@ -62,7 +62,7 @@ trait HasPayloadFormatters
         string|Closure|null $bcc = null
     ): static {
         return $this->formatPayloadUsing(function ($raw) use ($email, $subject, $body, $cc, $bcc) {
-            $e = (string) ($this->evaluateFormattedValue($email, $raw) ?? $raw);
+            $e = $this->formatString($this->evaluateFormattedValue($email, $raw) ?? $raw);
             $s = $this->evaluateFormattedValue($subject, $raw);
             $b = $this->evaluateFormattedValue($body, $raw);
             $c = $this->evaluateFormattedValue($cc, $raw);
@@ -70,16 +70,16 @@ trait HasPayloadFormatters
 
             $params = [];
             if ($s !== null && $s !== '') {
-                $params['subject'] = (string) $s;
+                $params['subject'] = $this->formatString($s);
             }
             if ($b !== null && $b !== '') {
-                $params['body'] = (string) $b;
+                $params['body'] = $this->formatString($b);
             }
             if ($c !== null && $c !== '') {
-                $params['cc'] = (string) $c;
+                $params['cc'] = $this->formatString($c);
             }
             if ($bc !== null && $bc !== '') {
-                $params['bcc'] = (string) $bc;
+                $params['bcc'] = $this->formatString($bc);
             }
 
             return 'mailto:'.$e.($params ? '?'.http_build_query($params) : '');
@@ -89,17 +89,17 @@ trait HasPayloadFormatters
     public function asSms(string|Closure|null $phone = null, string|Closure|null $message = null): static
     {
         return $this->formatPayloadUsing(function ($raw) use ($phone, $message) {
-            $p = (string) ($this->evaluateFormattedValue($phone, $raw) ?? $raw);
+            $p = $this->formatString($this->evaluateFormattedValue($phone, $raw) ?? $raw);
             $m = $this->evaluateFormattedValue($message, $raw);
 
-            return 'smsto:'.$p.($m !== null && $m !== '' ? ':'.(string) $m : '');
+            return 'smsto:'.$p.($m !== null && $m !== '' ? ':'.$this->formatString($m) : '');
         });
     }
 
     public function asPhoneNumber(string|Closure|null $phone = null): static
     {
         return $this->formatPayloadUsing(function ($raw) use ($phone) {
-            $p = (string) ($this->evaluateFormattedValue($phone, $raw) ?? $raw);
+            $p = $this->formatString($this->evaluateFormattedValue($phone, $raw) ?? $raw);
 
             return 'tel:'.$p;
         });
@@ -113,7 +113,7 @@ trait HasPayloadFormatters
         string|Closure|null $returnAddress = null
     ): static {
         return $this->formatPayloadUsing(function ($raw) use ($address, $amount, $label, $message, $returnAddress) {
-            $addr = trim((string) ($this->evaluateFormattedValue($address, $raw) ?? $raw));
+            $addr = trim($this->formatString($this->evaluateFormattedValue($address, $raw) ?? $raw));
             $amt = $this->evaluateFormattedValue($amount, $raw);
             $lbl = $this->evaluateFormattedValue($label, $raw);
             $msg = $this->evaluateFormattedValue($message, $raw);
@@ -121,55 +121,85 @@ trait HasPayloadFormatters
 
             $params = [];
             if ($amt !== null && $amt !== '') {
-                $params['amount'] = (string) $amt;
+                $params['amount'] = $this->formatString($amt);
             }
             if ($lbl !== null && $lbl !== '') {
-                $params['label'] = (string) $lbl;
+                $params['label'] = $this->formatString($lbl);
             }
             if ($msg !== null && $msg !== '') {
-                $params['message'] = (string) $msg;
+                $params['message'] = $this->formatString($msg);
             }
             if ($ret !== null && $ret !== '') {
-                $params['r'] = (string) $ret;
+                $params['r'] = $this->formatString($ret);
             }
 
             $query = $params ? '?'.http_build_query($params, '', '&', PHP_QUERY_RFC3986) : '';
 
-            return "bitcoin:{$addr}{$query}";
+            return 'bitcoin:'.$addr.$query;
         });
+    }
+
+    public function asBtc(
+        string|Closure|null $address = null,
+        float|string|Closure|null $amount = null,
+        string|Closure|null $label = null,
+        string|Closure|null $message = null,
+        string|Closure|null $returnAddress = null
+    ): static {
+        return $this->asBitcoin($address, $amount, $label, $message, $returnAddress);
     }
 
     public function asEthereum(
         string|Closure|null $address = null,
-        float|string|Closure|null $value = null,
-        float|string|Closure|null $gas = null,
-        float|string|Closure|null $gasLimit = null,
-        float|string|Closure|null $gasPrice = null
+        float|string|Closure|null $amount = null
     ): static {
-        return $this->formatPayloadUsing(function ($raw) use ($address, $value, $gas, $gasLimit, $gasPrice) {
-            $addr = trim((string) ($this->evaluateFormattedValue($address, $raw) ?? $raw));
-            $val = $this->evaluateFormattedValue($value, $raw);
-            $g = $this->evaluateFormattedValue($gas, $raw);
-            $gl = $this->evaluateFormattedValue($gasLimit, $raw);
-            $gp = $this->evaluateFormattedValue($gasPrice, $raw);
+        return $this->formatPayloadUsing(function ($raw) use ($address, $amount) {
+            $addr = trim($this->formatString($this->evaluateFormattedValue($address, $raw) ?? $raw));
+            $amt = $this->evaluateFormattedValue($amount, $raw);
+
+            $query = ($amt !== null && $amt !== '') ? '?'.http_build_query(['amount' => $this->formatString($amt)], '', '&', PHP_QUERY_RFC3986) : '';
+
+            return 'ethereum:'.$addr.$query;
+        });
+    }
+
+    public function asEth(
+        string|Closure|null $address = null,
+        float|string|Closure|null $amount = null
+    ): static {
+        return $this->asEthereum($address, $amount);
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     */
+    public function asCrypto(
+        string|Closure $type,
+        string|Closure|null $address = null,
+        float|string|Closure|null $amount = null,
+        array|Closure $extra = []
+    ): static {
+        return $this->formatPayloadUsing(function ($raw) use ($type, $address, $amount, $extra) {
+            $scheme = strtolower($this->formatString($this->evaluateFormattedValue($type, $raw)));
+            $addr = trim($this->formatString($this->evaluateFormattedValue($address, $raw) ?? $raw));
+            $amt = $this->evaluateFormattedValue($amount, $raw);
+            $evaluatedExtra = $this->evaluateFormattedValue($extra, $raw);
+            $extraParams = is_array($evaluatedExtra) ? $evaluatedExtra : [];
 
             $params = [];
-            if ($val !== null && $val !== '') {
-                $params['value'] = (string) $val;
+            if ($amt !== null && $amt !== '') {
+                $params['amount'] = $this->formatString($amt);
             }
-            if ($g !== null && $g !== '') {
-                $params['gas'] = (string) $g;
-            }
-            if ($gl !== null && $gl !== '') {
-                $params['gasLimit'] = (string) $gl;
-            }
-            if ($gp !== null && $gp !== '') {
-                $params['gasPrice'] = (string) $gp;
+            foreach ($extraParams as $k => $v) {
+                if ($v !== null && $v !== '') {
+                    $keyStr = is_string($k) ? $k : (string) $k;
+                    $params[$keyStr] = $this->formatString($v);
+                }
             }
 
             $query = $params ? '?'.http_build_query($params, '', '&', PHP_QUERY_RFC3986) : '';
 
-            return "ethereum:{$addr}{$query}";
+            return $scheme.':'.$addr.$query;
         });
     }
 
@@ -178,108 +208,139 @@ trait HasPayloadFormatters
      */
     public function asVCard(
         string|array|Closure|null $name = null,
-        string|Closure|null $fullName = null,
-        string|Closure|null $company = null,
-        string|Closure|null $title = null,
-        string|Closure|null $email = null,
         string|Closure|null $phone = null,
-        string|Closure|null $phoneWork = null,
-        string|Closure|null $phoneCell = null,
+        string|Closure|null $email = null,
+        string|Closure|null $company = null,
+        string|Closure|null $job = null,
+        string|Closure|null $firstName = null,
+        string|Closure|null $lastName = null,
         string|Closure|null $address = null,
         string|Closure|null $url = null,
         string|Closure|null $note = null,
-        string|Closure|null $birthday = null
+        string|Closure|null $birthday = null,
+        string|Closure|null $version = '4.0',
+        string|Closure|null $emailWork = null,
+        string|Closure|null $emailHome = null,
+        string|Closure|null $phoneWork = null,
+        string|Closure|null $phoneHome = null,
+        string|Closure|null $phoneCell = null,
+        string|Closure|null $role = null
     ): static {
         return $this->formatPayloadUsing(function ($raw) use (
-            $name,
-            $fullName,
-            $company,
-            $title,
-            $email,
-            $phone,
-            $phoneWork,
-            $phoneCell,
-            $address,
-            $url,
-            $note,
-            $birthday
+            $name, $phone, $email, $company, $job, $firstName, $lastName,
+            $address, $url, $note, $birthday, $version, $emailWork, $emailHome,
+            $phoneWork, $phoneHome, $phoneCell, $role
         ) {
             $evaluatedName = $this->evaluateFormattedValue($name, $raw);
-            $evaluatedFullName = $this->evaluateFormattedValue($fullName, $raw);
 
+            // Support passing associative array of vCard attributes
             if (is_array($evaluatedName)) {
-                $last = $evaluatedName['last'] ?? '';
-                $first = $evaluatedName['first'] ?? '';
-                $middle = $evaluatedName['middle'] ?? '';
-                $prefix = $evaluatedName['prefix'] ?? '';
-                $suffix = $evaluatedName['suffix'] ?? '';
-                $nFormatted = "{$last};{$first};{$middle};{$prefix};{$suffix}";
-                $fn = $evaluatedFullName ?? trim("{$prefix} {$first} {$middle} {$last} {$suffix}");
+                $data = $evaluatedName;
+                $fn = isset($data['name']) ? $this->formatString($data['name']) : (isset($data['fn']) ? $this->formatString($data['fn']) : $this->formatString($raw));
+                $firstNameVal = $data['firstName'] ?? $data['first_name'] ?? null;
+                $lastNameVal = $data['lastName'] ?? $data['last_name'] ?? null;
+                $companyVal = $data['company'] ?? $data['org'] ?? null;
+                $jobVal = $data['job'] ?? $data['title'] ?? null;
+                $roleVal = $data['role'] ?? null;
+                $emailVal = $data['email'] ?? null;
+                $emailWorkVal = $data['emailWork'] ?? $data['email_work'] ?? null;
+                $emailHomeVal = $data['emailHome'] ?? $data['email_home'] ?? null;
+                $phoneVal = $data['phone'] ?? null;
+                $phoneWorkVal = $data['phoneWork'] ?? $data['phone_work'] ?? null;
+                $phoneHomeVal = $data['phoneHome'] ?? $data['phone_home'] ?? null;
+                $phoneCellVal = $data['phoneCell'] ?? $data['phone_cell'] ?? null;
+                $addressVal = $data['address'] ?? $data['adr'] ?? null;
+                $urlVal = $data['url'] ?? null;
+                $noteVal = $data['note'] ?? null;
+                $birthdayVal = $data['birthday'] ?? $data['bday'] ?? null;
+                $vCardVersion = isset($data['version']) ? $this->formatString($data['version'], '4.0') : '4.0';
             } else {
-                $stringName = (string) ($evaluatedName ?? $raw);
-                $fn = $evaluatedFullName ?? $stringName;
-                $parts = explode(' ', $stringName, 2);
-                $first = $parts[0] ?? '';
-                $last = $parts[1] ?? '';
-                $nFormatted = "{$last};{$first};;;";
+                $fn = $this->formatString($evaluatedName ?? $raw);
+                $firstNameVal = $this->evaluateFormattedValue($firstName, $raw);
+                $lastNameVal = $this->evaluateFormattedValue($lastName, $raw);
+                $companyVal = $this->evaluateFormattedValue($company, $raw);
+                $jobVal = $this->evaluateFormattedValue($job, $raw);
+                $roleVal = $this->evaluateFormattedValue($role, $raw);
+                $emailVal = $this->evaluateFormattedValue($email, $raw);
+                $emailWorkVal = $this->evaluateFormattedValue($emailWork, $raw);
+                $emailHomeVal = $this->evaluateFormattedValue($emailHome, $raw);
+                $phoneVal = $this->evaluateFormattedValue($phone, $raw);
+                $phoneWorkVal = $this->evaluateFormattedValue($phoneWork, $raw);
+                $phoneHomeVal = $this->evaluateFormattedValue($phoneHome, $raw);
+                $phoneCellVal = $this->evaluateFormattedValue($phoneCell, $raw);
+                $addressVal = $this->evaluateFormattedValue($address, $raw);
+                $urlVal = $this->evaluateFormattedValue($url, $raw);
+                $noteVal = $this->evaluateFormattedValue($note, $raw);
+                $birthdayVal = $this->evaluateFormattedValue($birthday, $raw);
+                $vCardVersion = $this->formatString($this->evaluateFormattedValue($version, $raw) ?? '4.0', '4.0');
             }
-
-            $companyVal = $this->evaluateFormattedValue($company, $raw);
-            $titleVal = $this->evaluateFormattedValue($title, $raw);
-            $emailVal = $this->evaluateFormattedValue($email, $raw);
-            $phoneVal = $this->evaluateFormattedValue($phone, $raw);
-            $phoneWorkVal = $this->evaluateFormattedValue($phoneWork, $raw);
-            $phoneCellVal = $this->evaluateFormattedValue($phoneCell, $raw);
-            $addressVal = $this->evaluateFormattedValue($address, $raw);
-            $urlVal = $this->evaluateFormattedValue($url, $raw);
-            $noteVal = $this->evaluateFormattedValue($note, $raw);
-            $birthdayVal = $this->evaluateFormattedValue($birthday, $raw);
 
             $lines = [
                 'BEGIN:VCARD',
-                'VERSION:3.0',
-                'N:'.$nFormatted,
-                'FN:'.$this->escapeVCardValue((string) $fn),
+                'VERSION:'.$vCardVersion,
+                'FN:'.$this->escapeVCardValue($fn),
             ];
 
-            if ($companyVal !== null && $companyVal !== '') {
-                $lines[] = 'ORG:'.$this->escapeVCardValue((string) $companyVal);
+            if ($firstNameVal !== null || $lastNameVal !== null) {
+                $lines[] = 'N:'.$this->escapeVCardValue($this->formatString($lastNameVal)).';'.
+                    $this->escapeVCardValue($this->formatString($firstNameVal)).';;;';
             }
 
-            if ($titleVal !== null && $titleVal !== '') {
-                $lines[] = 'TITLE:'.$this->escapeVCardValue((string) $titleVal);
+            if ($companyVal !== null && $companyVal !== '') {
+                $lines[] = 'ORG:'.$this->escapeVCardValue($this->formatString($companyVal));
+            }
+
+            if ($jobVal !== null && $jobVal !== '') {
+                $lines[] = 'TITLE:'.$this->escapeVCardValue($this->formatString($jobVal));
+            }
+
+            if ($roleVal !== null && $roleVal !== '') {
+                $lines[] = 'ROLE:'.$this->escapeVCardValue($this->formatString($roleVal));
             }
 
             if ($emailVal !== null && $emailVal !== '') {
-                $lines[] = 'EMAIL;type=INTERNET:'.$this->escapeVCardValue((string) $emailVal);
+                $emailPrefix = $vCardVersion === '3.0' ? 'EMAIL;type=INTERNET:' : 'EMAIL:';
+                $lines[] = $emailPrefix.$this->escapeVCardValue($this->formatString($emailVal));
+            }
+
+            if ($emailWorkVal !== null && $emailWorkVal !== '') {
+                $lines[] = 'EMAIL;type=WORK:'.$this->escapeVCardValue($this->formatString($emailWorkVal));
+            }
+
+            if ($emailHomeVal !== null && $emailHomeVal !== '') {
+                $lines[] = 'EMAIL;type=HOME:'.$this->escapeVCardValue($this->formatString($emailHomeVal));
             }
 
             if ($phoneVal !== null && $phoneVal !== '') {
-                $lines[] = 'TEL;type=VOICE:'.$this->escapeVCardValue((string) $phoneVal);
+                $lines[] = 'TEL:'.$this->escapeVCardValue($this->formatString($phoneVal));
             }
 
             if ($phoneWorkVal !== null && $phoneWorkVal !== '') {
-                $lines[] = 'TEL;type=WORK:'.$this->escapeVCardValue((string) $phoneWorkVal);
+                $lines[] = 'TEL;type=WORK:'.$this->escapeVCardValue($this->formatString($phoneWorkVal));
+            }
+
+            if ($phoneHomeVal !== null && $phoneHomeVal !== '') {
+                $lines[] = 'TEL;type=HOME:'.$this->escapeVCardValue($this->formatString($phoneHomeVal));
             }
 
             if ($phoneCellVal !== null && $phoneCellVal !== '') {
-                $lines[] = 'TEL;type=CELL:'.$this->escapeVCardValue((string) $phoneCellVal);
+                $lines[] = 'TEL;type=CELL:'.$this->escapeVCardValue($this->formatString($phoneCellVal));
             }
 
             if ($addressVal !== null && $addressVal !== '') {
-                $lines[] = 'ADR:;;'.$this->escapeVCardValue((string) $addressVal).';;;;';
+                $lines[] = 'ADR:;;'.$this->escapeVCardValue($this->formatString($addressVal)).';;;;';
             }
 
             if ($urlVal !== null && $urlVal !== '') {
-                $lines[] = 'URL:'.$this->escapeVCardValue((string) $urlVal);
+                $lines[] = 'URL:'.$this->escapeVCardValue($this->formatString($urlVal));
             }
 
             if ($noteVal !== null && $noteVal !== '') {
-                $lines[] = 'NOTE:'.$this->escapeVCardValue((string) $noteVal);
+                $lines[] = 'NOTE:'.$this->escapeVCardValue($this->formatString($noteVal));
             }
 
             if ($birthdayVal !== null && $birthdayVal !== '') {
-                $lines[] = 'BDAY:'.$this->escapeVCardValue((string) $birthdayVal);
+                $lines[] = 'BDAY:'.$this->escapeVCardValue($this->formatString($birthdayVal));
             }
 
             $lines[] = 'END:VCARD';
@@ -304,14 +365,14 @@ trait HasPayloadFormatters
             $evaluatedName = $this->evaluateFormattedValue($name, $raw);
 
             if (is_array($evaluatedName)) {
-                $n = $evaluatedName['name'] ?? (string) $raw;
+                $n = isset($evaluatedName['name']) ? $this->formatString($evaluatedName['name']) : $this->formatString($raw);
                 $p = $evaluatedName['phone'] ?? null;
                 $e = $evaluatedName['email'] ?? null;
                 $u = $evaluatedName['url'] ?? null;
                 $a = $evaluatedName['address'] ?? null;
                 $nt = $evaluatedName['note'] ?? null;
             } else {
-                $n = (string) ($evaluatedName ?? $raw);
+                $n = $this->formatString($evaluatedName ?? $raw);
                 $p = $this->evaluateFormattedValue($phone, $raw);
                 $e = $this->evaluateFormattedValue($email, $raw);
                 $u = $this->evaluateFormattedValue($url, $raw);
@@ -322,19 +383,19 @@ trait HasPayloadFormatters
             $parts = ['MECARD:N:'.$this->escapeMeCardValue($n).';'];
 
             if ($p !== null && $p !== '') {
-                $parts[] = 'TEL:'.$this->escapeMeCardValue((string) $p).';';
+                $parts[] = 'TEL:'.$this->escapeMeCardValue($this->formatString($p)).';';
             }
             if ($e !== null && $e !== '') {
-                $parts[] = 'EMAIL:'.$this->escapeMeCardValue((string) $e).';';
+                $parts[] = 'EMAIL:'.$this->escapeMeCardValue($this->formatString($e)).';';
             }
             if ($u !== null && $u !== '') {
-                $parts[] = 'URL:'.$this->escapeMeCardValue((string) $u).';';
+                $parts[] = 'URL:'.$this->escapeMeCardValue($this->formatString($u)).';';
             }
             if ($a !== null && $a !== '') {
-                $parts[] = 'ADR:'.$this->escapeMeCardValue((string) $a).';';
+                $parts[] = 'ADR:'.$this->escapeMeCardValue($this->formatString($a)).';';
             }
             if ($nt !== null && $nt !== '') {
-                $parts[] = 'NOTE:'.$this->escapeMeCardValue((string) $nt).';';
+                $parts[] = 'NOTE:'.$this->escapeMeCardValue($this->formatString($nt)).';';
             }
 
             return implode('', $parts).';';
@@ -347,13 +408,13 @@ trait HasPayloadFormatters
         string|Closure|null $name = null
     ): static {
         return $this->formatPayloadUsing(function ($raw) use ($latitude, $longitude, $name) {
-            $lat = $this->evaluateFormattedValue($latitude, $raw);
-            $lng = $this->evaluateFormattedValue($longitude, $raw);
+            $lat = $this->formatString($this->evaluateFormattedValue($latitude, $raw));
+            $lng = $this->formatString($this->evaluateFormattedValue($longitude, $raw));
             $queryName = $this->evaluateFormattedValue($name, $raw);
 
-            $geo = 'geo:'.$lat.','.$lng;
+            $geo = "geo:{$lat},{$lng}";
             if ($queryName !== null && $queryName !== '') {
-                $geo .= '?q='.urlencode((string) $queryName);
+                $geo .= '?q='.urlencode($this->formatString($queryName));
             }
 
             return $geo;
@@ -363,10 +424,23 @@ trait HasPayloadFormatters
     public function resolveFormattedPayload(mixed $raw): ?string
     {
         if ($this->payloadFormatter) {
-            return (string) ($this->payloadFormatter)($raw);
+            return $this->formatString(($this->payloadFormatter)($raw));
         }
 
-        return $raw !== null ? (string) $raw : null;
+        return $raw !== null ? $this->formatString($raw) : null;
+    }
+
+    protected function formatString(mixed $value, string $default = ''): string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+
+        if (is_scalar($value) || $value instanceof \Stringable) {
+            return (string) $value;
+        }
+
+        return $default;
     }
 
     protected function evaluateFormattedValue(mixed $value, mixed $raw): mixed

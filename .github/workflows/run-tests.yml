@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         php: ['8.2', '8.3', '8.4', '8.5']
-        laravel: ['11.*', '12.*', '13.*']
+        laravel: ['12.*', '13.*']
         dependency-version: [prefer-stable]
 
     name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.dependency-version }}
@@ -39,7 +39,7 @@ jobs:
 
   phpstan:
     runs-on: ubuntu-latest
-    name: PHPStan Level 8
+    name: PHPStan Max Level
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -55,7 +55,7 @@ jobs:
         run: composer update --prefer-stable --prefer-dist --no-interaction
 
       - name: Run PHPStan
-        run: vendor/bin/phpstan analyse --ansi
+        run: vendor/bin/phpstan analyse --level=max --ansi
 
   pint:
     runs-on: ubuntu-latest
