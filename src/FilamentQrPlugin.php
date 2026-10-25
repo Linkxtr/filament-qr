@@ -1,21 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkxtr\FilamentQr;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 
-class FilamentQrPlugin implements Plugin
+final class FilamentQrPlugin implements Plugin
 {
     public static function make(): static
     {
-        return app(static::class);
+        return app(self::class);
     }
 
     public static function get(): static
     {
         /** @var static $plugin */
-        $plugin = filament(app(static::class)->getId());
+        $plugin = filament(app(self::class)->getId());
 
         return $plugin;
     }

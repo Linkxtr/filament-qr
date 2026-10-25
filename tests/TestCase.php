@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkxtr\FilamentQr\Tests;
 
 use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
@@ -22,15 +24,15 @@ class TestCase extends Orchestra
     {
         parent::setUp();
 
-        Schema::create('records', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->nullable();
-            $table->string('qr')->nullable();
-            $table->string('url')->nullable();
-            $table->string('email')->nullable();
-            $table->string('wifi_ssid')->nullable();
-            $table->string('wifi_password')->nullable();
-            $table->timestamps();
+        Schema::create('records', function (Blueprint $blueprint): void {
+            $blueprint->id();
+            $blueprint->string('name')->nullable();
+            $blueprint->string('qr')->nullable();
+            $blueprint->string('url')->nullable();
+            $blueprint->string('email')->nullable();
+            $blueprint->string('wifi_ssid')->nullable();
+            $blueprint->string('wifi_password')->nullable();
+            $blueprint->timestamps();
         });
     }
 
@@ -50,7 +52,7 @@ class TestCase extends Orchestra
         ];
     }
 
-    public function getEnvironmentSetUp($app)
+    protected function getEnvironmentSetUp($app): void
     {
         config()->set('database.default', 'testing');
         config()->set('database.connections.testing', [

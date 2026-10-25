@@ -1,26 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 use Linkxtr\FilamentQr\Tables\Columns\QrCodeColumn;
 
-it('formats wifi credentials with escaping and custom encryption', function () {
-    $column = QrCodeColumn::make('wifi_col')
+it('formats wifi credentials with escaping and custom encryption', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('wifi_col')
         ->asWifi('My-Home-Network', 'p@ss:w;ord,1', 'WPA', true);
 
-    expect($column->getQrPayload())->toBe('WIFI:S:My-Home-Network;T:WPA;P:p@ss\\:w\\;ord\\,1;H:true;;');
+    expect($qrCodeColumn->getQrPayload())->toBe('WIFI:S:My-Home-Network;T:WPA;P:p@ss\\:w\\;ord\\,1;H:true;;');
 });
 
-it('formats open / nopass wifi networks', function () {
-    $column = QrCodeColumn::make('open_wifi')
+it('formats open / nopass wifi networks', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('open_wifi')
         ->asWifi('Public-Guest', null, 'NOPASS', false);
 
-    expect($column->getQrPayload())->toBe('WIFI:S:Public-Guest;T:NOPASS;H:false;;');
+    expect($qrCodeColumn->getQrPayload())->toBe('WIFI:S:Public-Guest;T:NOPASS;H:false;;');
 });
 
-it('formats bitcoin address with amount, label, and message', function () {
-    $column = QrCodeColumn::make('btc')
+it('formats bitcoin address with amount, label, and message', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('btc')
         ->asBitcoin('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', 0.05, 'Satoshi Store', 'Payment for order #123');
 
-    $payload = $column->getQrPayload();
+    $payload = $qrCodeColumn->getQrPayload();
 
     expect($payload)->toStartWith('bitcoin:1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa?')
         ->and($payload)->toContain('amount=0.05')
@@ -28,35 +30,35 @@ it('formats bitcoin address with amount, label, and message', function () {
         ->and($payload)->toContain('message=Payment%20for%20order%20%23123');
 });
 
-it('supports asBtc alias without parameters', function () {
-    $column = QrCodeColumn::make('btc_alias')
+it('supports asBtc alias without parameters', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('btc_alias')
         ->asBtc('bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq');
 
-    expect($column->getQrPayload())->toBe('bitcoin:bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq');
+    expect($qrCodeColumn->getQrPayload())->toBe('bitcoin:bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq');
 });
 
-it('formats ethereum addresses with and without amount', function () {
-    $col1 = QrCodeColumn::make('eth1')
+it('formats ethereum addresses with and without amount', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('eth1')
         ->asEthereum('0x742d35Cc6634C0532925a3b844Bc454e4438f44e');
-    expect($col1->getQrPayload())->toBe('ethereum:0x742d35Cc6634C0532925a3b844Bc454e4438f44e');
+    expect($qrCodeColumn->getQrPayload())->toBe('ethereum:0x742d35Cc6634C0532925a3b844Bc454e4438f44e');
 
     $col2 = QrCodeColumn::make('eth2')
         ->asEth('0x742d35Cc6634C0532925a3b844Bc454e4438f44e', 1.75);
     expect($col2->getQrPayload())->toBe('ethereum:0x742d35Cc6634C0532925a3b844Bc454e4438f44e?amount=1.75');
 });
 
-it('formats arbitrary crypto addresses with asCrypto', function () {
-    $col = QrCodeColumn::make('sol')
+it('formats arbitrary crypto addresses with asCrypto', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('sol')
         ->asCrypto('solana', '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU', 10.5, ['memo' => 'INV-99']);
 
-    $payload = $col->getQrPayload();
+    $payload = $qrCodeColumn->getQrPayload();
     expect($payload)->toStartWith('solana:7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU?')
         ->and($payload)->toContain('amount=10.5')
         ->and($payload)->toContain('memo=INV-99');
 });
 
-it('formats vCard 4.0 contact with full RFC 6350 fields', function () {
-    $column = QrCodeColumn::make('vcard')
+it('formats vCard 4.0 contact with full RFC 6350 fields', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('vcard')
         ->asVCard(
             name: 'Jane Doe',
             phone: '+1-555-0199',
@@ -72,7 +74,7 @@ it('formats vCard 4.0 contact with full RFC 6350 fields', function () {
             version: '4.0'
         );
 
-    $payload = $column->getQrPayload();
+    $payload = $qrCodeColumn->getQrPayload();
 
     expect($payload)->toContain("BEGIN:VCARD\r\n")
         ->and($payload)->toContain("VERSION:4.0\r\n")
@@ -87,8 +89,8 @@ it('formats vCard 4.0 contact with full RFC 6350 fields', function () {
         ->and($payload)->toContain('END:VCARD');
 });
 
-it('supports vCard 4.0 using associative array parameter', function () {
-    $column = QrCodeColumn::make('vcard_arr')
+it('supports vCard 4.0 using associative array parameter', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('vcard_arr')
         ->asVCard([
             'name' => 'John Smith',
             'phone' => '+44 20 7946 0912',
@@ -96,7 +98,7 @@ it('supports vCard 4.0 using associative array parameter', function () {
             'company' => 'Stark Enterprises',
         ]);
 
-    $payload = $column->getQrPayload();
+    $payload = $qrCodeColumn->getQrPayload();
 
     expect($payload)->toContain("BEGIN:VCARD\r\n")
         ->and($payload)->toContain("VERSION:4.0\r\n")
@@ -107,9 +109,9 @@ it('supports vCard 4.0 using associative array parameter', function () {
         ->and($payload)->toContain('END:VCARD');
 });
 
-it('formats url, email, and sms payloads', function () {
-    $urlCol = QrCodeColumn::make('url')->asUrl('https://laravel.com');
-    expect($urlCol->getQrPayload())->toBe('https://laravel.com');
+it('formats url, email, and sms payloads', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('url')->asUrl('https://laravel.com');
+    expect($qrCodeColumn->getQrPayload())->toBe('https://laravel.com');
 
     $emailCol = QrCodeColumn::make('email')->asEmail('support@example.com', 'Inquiry', 'Hello team');
     expect($emailCol->getQrPayload())->toBe('mailto:support@example.com?subject=Inquiry&body=Hello+team');
@@ -118,9 +120,9 @@ it('formats url, email, and sms payloads', function () {
     expect($smsCol->getQrPayload())->toBe('smsto:+15551234567:Verify code: 8901');
 });
 
-it('formats geo, phone number, and mecard payloads', function () {
-    $geoCol = QrCodeColumn::make('geo')->asGeo(30.0444, 31.2357, 'Cairo Tower');
-    expect($geoCol->getQrPayload())->toBe('geo:30.0444,31.2357?q=Cairo+Tower');
+it('formats geo, phone number, and mecard payloads', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('geo')->asGeo(30.0444, 31.2357, 'Cairo Tower');
+    expect($qrCodeColumn->getQrPayload())->toBe('geo:30.0444,31.2357?q=Cairo+Tower');
 
     $phoneCol = QrCodeColumn::make('phone')->asPhoneNumber('+1234567890');
     expect($phoneCol->getQrPayload())->toBe('tel:+1234567890');
@@ -129,11 +131,11 @@ it('formats geo, phone number, and mecard payloads', function () {
     expect($meCardCol->getQrPayload())->toBe('MECARD:N:Alex Green;TEL:+100200300;EMAIL:alex@example.com;;');
 });
 
-it('evaluates record state when parameters are omitted', function () {
-    $urlCol = QrCodeColumn::make('url_from_state')
+it('evaluates record state when parameters are omitted', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('url_from_state')
         ->state('https://tailwindcss.com')
         ->asUrl();
-    expect($urlCol->getQrPayload())->toBe('https://tailwindcss.com');
+    expect($qrCodeColumn->getQrPayload())->toBe('https://tailwindcss.com');
 
     $phoneCol = QrCodeColumn::make('phone_from_state')
         ->state('+9876543210')

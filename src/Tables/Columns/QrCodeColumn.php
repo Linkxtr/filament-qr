@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkxtr\FilamentQr\Tables\Columns;
 
 use Closure;
@@ -9,7 +11,7 @@ use Linkxtr\FilamentQr\Concerns\HasQrCodeStyling;
 use Linkxtr\FilamentQr\Concerns\HasQrInteractions;
 use Linkxtr\FilamentQr\Services\QrCodeRenderer;
 
-class QrCodeColumn extends Column
+final class QrCodeColumn extends Column
 {
     use HasPayloadFormatters;
     use HasQrCodeStyling;
@@ -17,7 +19,7 @@ class QrCodeColumn extends Column
 
     protected string $view = 'filament-qr::tables.columns.qr-code-column';
 
-    protected ?Closure $payloadResolver = null;
+    private ?Closure $payloadResolver = null;
 
     public function payload(Closure $callback): static
     {
@@ -28,7 +30,7 @@ class QrCodeColumn extends Column
 
     public function getQrPayload(): ?string
     {
-        $raw = $this->payloadResolver
+        $raw = $this->payloadResolver instanceof Closure
             ? $this->evaluate($this->payloadResolver)
             : ($this->getState() ?? $this->evaluate($this->getStateUsing));
 
@@ -43,10 +45,10 @@ class QrCodeColumn extends Column
             return null;
         }
 
-        /** @var QrCodeRenderer $renderer */
-        $renderer = app(QrCodeRenderer::class);
+        /** @var QrCodeRenderer $qrCodeRenderer */
+        $qrCodeRenderer = app(QrCodeRenderer::class);
 
-        return $renderer->render(
+        return $qrCodeRenderer->render(
             payload: $payload,
             size: $this->getQrSize(),
             margin: $this->getQrMargin(),

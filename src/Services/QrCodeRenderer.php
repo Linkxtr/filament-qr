@@ -1,13 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkxtr\FilamentQr\Services;
 
+use Imagick;
 use Linkxtr\FilamentQr\Enums\EyeStyle;
 use Linkxtr\FilamentQr\Enums\QrStyle;
 use Linkxtr\QrCode\Facades\QrCode;
 use Linkxtr\QrCode\ValueObjects\Colors\Rgb;
+use Throwable;
 
-class QrCodeRenderer
+final class QrCodeRenderer
 {
     /**
      * Render the given payload as raw output (raw SVG string or binary image).
@@ -59,17 +63,17 @@ class QrCodeRenderer
         }
 
         if ($eyeStyle) {
-            $eyeVal = $eyeStyle instanceof EyeStyle ? $eyeStyle->value : (string) $eyeStyle;
+            $eyeVal = $eyeStyle instanceof EyeStyle ? $eyeStyle->value : $eyeStyle;
             $builder = $builder->eye($eyeVal);
         }
 
         if ($internalEyeStyle) {
-            $internalVal = $internalEyeStyle instanceof EyeStyle ? $internalEyeStyle->value : (string) $internalEyeStyle;
+            $internalVal = $internalEyeStyle instanceof EyeStyle ? $internalEyeStyle->value : $internalEyeStyle;
             $builder = $builder->internalEye($internalVal);
         }
 
         if ($style) {
-            $styleVal = $style instanceof QrStyle ? $style->value : (string) $style;
+            $styleVal = $style instanceof QrStyle ? $style->value : $style;
             $builder = $builder->style($styleVal, $styleSize);
         }
 
@@ -83,15 +87,15 @@ class QrCodeRenderer
 
         $output = (string) $builder->generate($payload);
 
-        if (($dpi || $resolution) && in_array($format, ['png', 'webp']) && extension_loaded('imagick')) {
+        if (($dpi || $resolution) && in_array($format, ['png', 'webp'], true) && extension_loaded('imagick')) {
             $dpiVal = (float) ($dpi ?? $resolution);
             try {
-                $imagick = new \Imagick;
+                $imagick = new Imagick;
                 $imagick->readImageBlob($output);
                 $imagick->setImageResolution($dpiVal, $dpiVal);
-                $imagick->setImageUnits(\Imagick::RESOLUTION_PIXELSPERINCH);
+                $imagick->setImageUnits(Imagick::RESOLUTION_PIXELSPERINCH);
                 $output = $imagick->getImageBlob();
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // If Imagick fails, retain original output
             }
         }

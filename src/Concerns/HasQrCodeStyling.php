@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkxtr\FilamentQr\Concerns;
 
 use Closure;
@@ -10,6 +12,8 @@ use Linkxtr\FilamentQr\Enums\EyeStyle;
 use Linkxtr\FilamentQr\Enums\GradientType;
 use Linkxtr\FilamentQr\Enums\QrFormat;
 use Linkxtr\FilamentQr\Enums\QrStyle;
+use Stringable;
+use Throwable;
 
 trait HasQrCodeStyling
 {
@@ -62,9 +66,11 @@ trait HasQrCodeStyling
         if (is_int($size)) {
             return $size;
         }
+
         if (is_numeric($size)) {
             return (int) $size;
         }
+
         $configSize = config('filament-qr.defaults.size', 160);
 
         return is_numeric($configSize) ? (int) $configSize : 160;
@@ -83,9 +89,11 @@ trait HasQrCodeStyling
         if (is_int($margin)) {
             return $margin;
         }
+
         if (is_numeric($margin)) {
             return (int) $margin;
         }
+
         $configMargin = config('filament-qr.defaults.margin', 1);
 
         return is_numeric($configMargin) ? (int) $configMargin : 1;
@@ -110,7 +118,7 @@ trait HasQrCodeStyling
             return $format;
         }
 
-        if (is_scalar($format) || $format instanceof \Stringable) {
+        if (is_scalar($format) || $format instanceof Stringable) {
             return (string) $format;
         }
 
@@ -158,7 +166,7 @@ trait HasQrCodeStyling
             return $level;
         }
 
-        if (is_scalar($level) || $level instanceof \Stringable) {
+        if (is_scalar($level) || $level instanceof Stringable) {
             return (string) $level;
         }
 
@@ -177,7 +185,7 @@ trait HasQrCodeStyling
     public function getQrColor(): string
     {
         $color = $this->evaluateStylingValue($this->qrColor);
-        $colorString = is_string($color) ? $color : (is_scalar($color) || $color instanceof \Stringable ? (string) $color : null);
+        $colorString = is_string($color) ? $color : (is_scalar($color) || $color instanceof Stringable ? (string) $color : null);
         if ($colorString === null) {
             $configColor = config('filament-qr.defaults.color', '#000000');
             $colorString = is_string($configColor) ? $configColor : '#000000';
@@ -196,7 +204,7 @@ trait HasQrCodeStyling
     public function getQrBackgroundColor(): string
     {
         $color = $this->evaluateStylingValue($this->qrBackgroundColor);
-        $colorString = is_string($color) ? $color : (is_scalar($color) || $color instanceof \Stringable ? (string) $color : null);
+        $colorString = is_string($color) ? $color : (is_scalar($color) || $color instanceof Stringable ? (string) $color : null);
         if ($colorString === null) {
             $configColor = config('filament-qr.defaults.background_color', '#ffffff');
             $colorString = is_string($configColor) ? $configColor : '#ffffff';
@@ -242,9 +250,9 @@ trait HasQrCodeStyling
             $type = $type->value;
         }
 
-        $fromString = is_string($from) ? $from : (is_scalar($from) || $from instanceof \Stringable ? (string) $from : '');
-        $toString = is_string($to) ? $to : (is_scalar($to) || $to instanceof \Stringable ? (string) $to : '');
-        $typeString = is_string($type) ? $type : (is_scalar($type) || $type instanceof \Stringable ? (string) $type : 'vertical');
+        $fromString = is_string($from) ? $from : (is_scalar($from) || $from instanceof Stringable ? (string) $from : '');
+        $toString = is_string($to) ? $to : (is_scalar($to) || $to instanceof Stringable ? (string) $to : '');
+        $typeString = is_string($type) ? $type : (is_scalar($type) || $type instanceof Stringable ? (string) $type : 'vertical');
 
         return [
             'from' => $this->resolveColorToken($fromString),
@@ -279,7 +287,7 @@ trait HasQrCodeStyling
         }
 
         $this->qrEyeColors = [];
-        for ($i = 0; $i < 3; $i++) {
+        for ($i = 0; $i < 3; ++$i) {
             $this->qrEyeColors[$i] = [
                 'inner' => $innerOrConfig,
                 'outer' => $outer,
@@ -315,8 +323,8 @@ trait HasQrCodeStyling
             $outer = isset($colors['outer']) ? $this->evaluateStylingValue($colors['outer']) : null;
 
             if ($inner !== null) {
-                $innerString = is_string($inner) ? $inner : (is_scalar($inner) || $inner instanceof \Stringable ? (string) $inner : '');
-                $outerString = $outer !== null ? (is_string($outer) ? $outer : (is_scalar($outer) || $outer instanceof \Stringable ? (string) $outer : null)) : null;
+                $innerString = is_string($inner) ? $inner : (is_scalar($inner) || $inner instanceof Stringable ? (string) $inner : '');
+                $outerString = $outer !== null ? (is_string($outer) ? $outer : (is_scalar($outer) || $outer instanceof Stringable ? (string) $outer : null)) : null;
 
                 $resolved[(int) $index] = [
                     'inner' => $this->resolveColorToken($innerString),
@@ -347,7 +355,7 @@ trait HasQrCodeStyling
             return $style;
         }
 
-        return is_scalar($style) || $style instanceof \Stringable ? (string) $style : null;
+        return is_scalar($style) || $style instanceof Stringable ? (string) $style : null;
     }
 
     public function qrInternalEyeStyle(EyeStyle|string|Closure $style): static
@@ -369,7 +377,7 @@ trait HasQrCodeStyling
             return $style;
         }
 
-        return is_scalar($style) || $style instanceof \Stringable ? (string) $style : null;
+        return is_scalar($style) || $style instanceof Stringable ? (string) $style : null;
     }
 
     public function qrStyle(QrStyle|string|Closure $style, float|Closure|null $size = null): static
@@ -394,7 +402,7 @@ trait HasQrCodeStyling
             return $style;
         }
 
-        return is_scalar($style) || $style instanceof \Stringable ? (string) $style : null;
+        return is_scalar($style) || $style instanceof Stringable ? (string) $style : null;
     }
 
     public function getQrStyleSize(): ?float
@@ -424,7 +432,7 @@ trait HasQrCodeStyling
             return $path;
         }
 
-        return is_scalar($path) || $path instanceof \Stringable ? (string) $path : null;
+        return is_scalar($path) || $path instanceof Stringable ? (string) $path : null;
     }
 
     public function getQrLogoSize(): float
@@ -489,7 +497,7 @@ trait HasQrCodeStyling
             return $encoding;
         }
 
-        return is_scalar($encoding) || $encoding instanceof \Stringable ? (string) $encoding : 'UTF-8';
+        return is_scalar($encoding) || $encoding instanceof Stringable ? (string) $encoding : 'UTF-8';
     }
 
     public function resolveColorToken(string $color): string
@@ -513,30 +521,21 @@ trait HasQrCodeStyling
         // Resolve dynamically from FilamentColor facade if available
         if (class_exists(FilamentColor::class)) {
             try {
-                /** @var mixed $registeredColor */
                 $registeredColor = FilamentColor::getColor($token);
 
                 if (! empty($registeredColor)) {
-                    if (is_array($registeredColor)) {
-                        $shadeVal = $registeredColor[$shade] ?? $registeredColor[500] ?? $registeredColor[600] ?? reset($registeredColor);
-                        if (is_string($shadeVal)) {
-                            if (str_starts_with($shadeVal, '#')) {
-                                return $shadeVal;
-                            }
-                            if (class_exists(Color::class)) {
-                                return Color::convertToHex($shadeVal);
-                            }
+                    $shadeVal = $registeredColor[$shade] ?? $registeredColor[500] ?? $registeredColor[600] ?? reset($registeredColor);
+                    if (is_string($shadeVal)) {
+                        if (str_starts_with($shadeVal, '#')) {
+                            return $shadeVal;
                         }
-                    } elseif (is_string($registeredColor)) {
-                        if (str_starts_with($registeredColor, '#')) {
-                            return $registeredColor;
-                        }
+
                         if (class_exists(Color::class)) {
-                            return Color::convertToHex($registeredColor);
+                            return Color::convertToHex($shadeVal);
                         }
                     }
                 }
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Ignore and fall back
             }
         }

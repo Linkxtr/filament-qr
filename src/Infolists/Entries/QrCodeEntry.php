@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkxtr\FilamentQr\Infolists\Entries;
 
 use Closure;
@@ -9,8 +11,9 @@ use Linkxtr\FilamentQr\Concerns\HasPayloadFormatters;
 use Linkxtr\FilamentQr\Concerns\HasQrCodeStyling;
 use Linkxtr\FilamentQr\Concerns\HasQrInteractions;
 use Linkxtr\FilamentQr\Services\QrCodeRenderer;
+use Throwable;
 
-class QrCodeEntry extends Entry
+final class QrCodeEntry extends Entry
 {
     use HasPayloadFormatters;
     use HasQrCodeStyling;
@@ -18,7 +21,7 @@ class QrCodeEntry extends Entry
 
     protected string $view = 'filament-qr::infolists.entries.qr-code-entry';
 
-    protected ?Closure $payloadResolver = null;
+    private ?Closure $payloadResolver = null;
 
     /**
      * @param  array<string, mixed>|class-string<Model>|Closure|Model|null  $record
@@ -39,12 +42,12 @@ class QrCodeEntry extends Entry
 
     public function getQrPayload(): ?string
     {
-        if ($this->payloadResolver) {
+        if ($this->payloadResolver instanceof Closure) {
             $raw = $this->evaluate($this->payloadResolver);
         } else {
             try {
                 $raw = $this->getState();
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 $raw = null;
             }
         }
@@ -60,10 +63,10 @@ class QrCodeEntry extends Entry
             return null;
         }
 
-        /** @var QrCodeRenderer $renderer */
-        $renderer = app(QrCodeRenderer::class);
+        /** @var QrCodeRenderer $qrCodeRenderer */
+        $qrCodeRenderer = app(QrCodeRenderer::class);
 
-        return $renderer->render(
+        return $qrCodeRenderer->render(
             payload: $payload,
             size: $this->getQrSize(),
             margin: $this->getQrMargin(),

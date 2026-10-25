@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkxtr\FilamentQr\Actions;
 
 use Closure;
@@ -11,27 +13,24 @@ use Illuminate\Support\LazyCollection;
 use Linkxtr\FilamentQr\Concerns\HasPayloadFormatters;
 use Linkxtr\FilamentQr\Concerns\HasQrCodeStyling;
 use Linkxtr\FilamentQr\Services\QrCodeRenderer;
+use RuntimeException;
+use Stringable;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use ZipArchive;
 
-class DownloadQrBulkAction extends BulkAction
+final class DownloadQrBulkAction extends BulkAction
 {
     use HasPayloadFormatters;
     use HasQrCodeStyling;
 
-    protected string|Closure $zipFilename = 'qrcodes.zip';
+    private string|Closure $zipFilename = 'qrcodes.zip';
 
-    protected string|Closure|null $recordFilename = null;
+    private string|Closure|null $recordFilename = null;
 
-    protected ?Closure $payloadResolver = null;
+    private ?Closure $payloadResolver = null;
 
     /** @var EloquentCollection<int, Model>|Collection<int, mixed>|null */
-    protected EloquentCollection|Collection|null $recordsCollection = null;
-
-    public static function getDefaultName(): ?string
-    {
-        return 'downloadQrBulk';
-    }
+    private EloquentCollection|Collection|null $recordsCollection = null;
 
     protected function setUp(): void
     {
@@ -40,11 +39,14 @@ class DownloadQrBulkAction extends BulkAction
         $this->label('Download QR Codes');
         $this->icon('heroicon-o-arrow-down-tray');
 
-        $this->action(function (EloquentCollection|Collection $records): ?StreamedResponse {
-            return $this->downloadZip($records);
-        });
+        $this->action(fn (EloquentCollection|Collection $records): ?StreamedResponse => $this->downloadZip($records));
 
         $this->deselectRecordsAfterCompletion();
+    }
+
+    public static function getDefaultName(): string
+    {
+        return 'downloadQrBulk';
     }
 
     /**
@@ -52,7 +54,7 @@ class DownloadQrBulkAction extends BulkAction
      */
     public function getSelectedRecords(): EloquentCollection|Collection|LazyCollection
     {
-        if ($this->recordsCollection !== null) {
+        if ($this->recordsCollection instanceof Collection) {
             return $this->recordsCollection;
         }
 
@@ -83,7 +85,7 @@ class DownloadQrBulkAction extends BulkAction
 
     public function getQrPayload(mixed $record): ?string
     {
-        if ($this->payloadResolver) {
+        if ($this->payloadResolver instanceof Closure) {
             $raw = $this->evaluate($this->payloadResolver, ['record' => $record]);
         } elseif ($record instanceof Model) {
             $raw = $record->getAttribute('qr') ?? $record->getAttribute('qr_code') ?? $record->getKey();
@@ -120,7 +122,7 @@ class DownloadQrBulkAction extends BulkAction
     public function getFilename(): string
     {
         $evaluated = $this->evaluate($this->zipFilename);
-        $filename = is_string($evaluated) ? $evaluated : (is_scalar($evaluated) || $evaluated instanceof \Stringable ? (string) $evaluated : 'qrcodes.zip');
+        $filename = is_string($evaluated) ? $evaluated : (is_scalar($evaluated) || $evaluated instanceof Stringable ? (string) $evaluated : 'qrcodes.zip');
         if ($filename === '') {
             $filename = 'qrcodes.zip';
         }
@@ -159,25 +161,25 @@ class DownloadQrBulkAction extends BulkAction
                 'format' => $this->getQrFormat(),
             ]);
 
-            return is_string($evaluated) ? $evaluated : (is_scalar($evaluated) || $evaluated instanceof \Stringable ? (string) $evaluated : "qrcode_{$index}");
+            return is_string($evaluated) ? $evaluated : (is_scalar($evaluated) || $evaluated instanceof Stringable ? (string) $evaluated : "qrcode_{$index}");
         }
 
         if ($record instanceof Model) {
             $key = $record->getKey();
 
-            return is_scalar($key) || $key instanceof \Stringable ? (string) $key : "qrcode_{$index}";
+            return is_scalar($key) || $key instanceof Stringable ? (string) $key : "qrcode_{$index}";
         }
 
         if (is_array($record) && isset($record['id'])) {
             $id = $record['id'];
 
-            return is_scalar($id) || $id instanceof \Stringable ? (string) $id : "qrcode_{$index}";
+            return is_scalar($id) || $id instanceof Stringable ? (string) $id : "qrcode_{$index}";
         }
 
         if (is_object($record) && isset($record->id)) {
             $id = $record->id;
 
-            return is_scalar($id) || $id instanceof \Stringable ? (string) $id : "qrcode_{$index}";
+            return is_scalar($id) || $id instanceof Stringable ? (string) $id : "qrcode_{$index}";
         }
 
         return "qrcode_{$index}";
@@ -201,17 +203,17 @@ class DownloadQrBulkAction extends BulkAction
     public function downloadZip(EloquentCollection|Collection $records): ?StreamedResponse
     {
         $format = $this->getQrFormat();
-        /** @var QrCodeRenderer $renderer */
-        $renderer = app(QrCodeRenderer::class);
+        /** @var QrCodeRenderer $qrCodeRenderer */
+        $qrCodeRenderer = app(QrCodeRenderer::class);
 
         $tempFile = tempnam(sys_get_temp_dir(), 'qr_zip_');
         if ($tempFile === false) {
-            throw new \RuntimeException('Failed to create temporary file for ZIP archive.');
+            throw new RuntimeException('Failed to create temporary file for ZIP archive.');
         }
 
-        $zip = new ZipArchive;
-        if ($zip->open($tempFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            throw new \RuntimeException('Failed to initialize ZIP archive.');
+        $zipArchive = new ZipArchive;
+        if ($zipArchive->open($tempFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            throw new RuntimeException('Failed to initialize ZIP archive.');
         }
 
         $index = 1;
@@ -219,13 +221,13 @@ class DownloadQrBulkAction extends BulkAction
         foreach ($records as $record) {
             $payload = $this->getQrPayload($record);
             if (empty($payload)) {
-                $index++;
+                ++$index;
 
                 continue;
             }
 
-            $output = $renderer->renderRaw(
-                payload: (string) $payload,
+            $output = $qrCodeRenderer->renderRaw(
+                payload: $payload,
                 size: $this->getQrSize(),
                 margin: $this->getQrMargin(),
                 format: $format,
@@ -246,12 +248,12 @@ class DownloadQrBulkAction extends BulkAction
             );
 
             $filename = $this->resolveEntryFilename($record, $index - 1, $format);
-            $zip->addFromString($filename, $output);
-            $index++;
-            $count++;
+            $zipArchive->addFromString($filename, $output);
+            ++$index;
+            ++$count;
         }
 
-        $zip->close();
+        $zipArchive->close();
 
         if ($count === 0) {
             if (file_exists($tempFile)) {
@@ -261,12 +263,13 @@ class DownloadQrBulkAction extends BulkAction
             return null;
         }
 
-        return response()->streamDownload(function () use ($tempFile) {
+        return response()->streamDownload(function () use ($tempFile): void {
             $stream = fopen($tempFile, 'rb');
             if (is_resource($stream)) {
                 fpassthru($stream);
                 fclose($stream);
             }
+
             if (file_exists($tempFile)) {
                 @unlink($tempFile);
             }

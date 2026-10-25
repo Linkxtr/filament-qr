@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkxtr\FilamentQr\Actions;
 
 use Closure;
@@ -8,23 +10,19 @@ use Illuminate\Database\Eloquent\Model;
 use Linkxtr\FilamentQr\Concerns\HasPayloadFormatters;
 use Linkxtr\FilamentQr\Concerns\HasQrCodeStyling;
 use Linkxtr\FilamentQr\Services\QrCodeRenderer;
+use Stringable;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class DownloadQrAction extends Action
+final class DownloadQrAction extends Action
 {
     use HasPayloadFormatters;
     use HasQrCodeStyling;
 
-    protected string|Closure $filename = 'qrcode';
+    private string|Closure $filename = 'qrcode';
 
-    protected ?Closure $payloadResolver = null;
+    private ?Closure $payloadResolver = null;
 
-    protected mixed $customRecord = null;
-
-    public static function getDefaultName(): ?string
-    {
-        return 'downloadQr';
-    }
+    private mixed $customRecord = null;
 
     protected function setUp(): void
     {
@@ -43,11 +41,11 @@ class DownloadQrAction extends Action
 
             $format = $this->getQrFormat();
 
-            /** @var QrCodeRenderer $renderer */
-            $renderer = app(QrCodeRenderer::class);
+            /** @var QrCodeRenderer $qrCodeRenderer */
+            $qrCodeRenderer = app(QrCodeRenderer::class);
 
-            $output = $renderer->renderRaw(
-                payload: (string) $payload,
+            $output = $qrCodeRenderer->renderRaw(
+                payload: $payload,
                 size: $this->getQrSize(),
                 margin: $this->getQrMargin(),
                 format: $format,
@@ -76,10 +74,15 @@ class DownloadQrAction extends Action
 
             $filename = $this->getFilename();
 
-            return response()->streamDownload(function () use ($output) {
+            return response()->streamDownload(function () use ($output): void {
                 echo $output;
             }, "{$filename}.{$format}", ['Content-Type' => $contentType]);
         });
+    }
+
+    public static function getDefaultName(): string
+    {
+        return 'downloadQr';
     }
 
     public function payload(Closure $callback): static
@@ -91,7 +94,7 @@ class DownloadQrAction extends Action
 
     public function resolvePayloadForRecord(mixed $record): ?string
     {
-        if ($this->payloadResolver) {
+        if ($this->payloadResolver instanceof Closure) {
             $raw = $this->evaluate($this->payloadResolver, ['record' => $record]);
         } elseif ($record instanceof Model) {
             $raw = $record->getAttribute('qr') ?? $record->getAttribute('qr_code') ?? $record->getAttribute('url') ?? $record->getKey();
@@ -119,6 +122,6 @@ class DownloadQrAction extends Action
     {
         $resolved = $this->evaluate($this->filename);
 
-        return is_string($resolved) ? $resolved : (is_scalar($resolved) || $resolved instanceof \Stringable ? (string) $resolved : 'qrcode');
+        return is_string($resolved) ? $resolved : (is_scalar($resolved) || $resolved instanceof Stringable ? (string) $resolved : 'qrcode');
     }
 }

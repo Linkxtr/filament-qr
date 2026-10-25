@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkxtr\FilamentQr\Concerns;
 
 use Closure;
+use Stringable;
 
 trait HasPayloadFormatters
 {
@@ -21,7 +24,7 @@ trait HasPayloadFormatters
         string|Closure $encryption = 'WPA',
         bool|Closure $hidden = false
     ): static {
-        return $this->formatPayloadUsing(function ($raw) use ($ssid, $password, $encryption, $hidden) {
+        return $this->formatPayloadUsing(function ($raw) use ($ssid, $password, $encryption, $hidden): string {
             $sVal = $this->evaluateFormattedValue($ssid, $raw) ?? $raw;
             $pVal = $this->evaluateFormattedValue($password, $raw);
             $tVal = $this->evaluateFormattedValue($encryption, $raw);
@@ -61,7 +64,7 @@ trait HasPayloadFormatters
         string|Closure|null $cc = null,
         string|Closure|null $bcc = null
     ): static {
-        return $this->formatPayloadUsing(function ($raw) use ($email, $subject, $body, $cc, $bcc) {
+        return $this->formatPayloadUsing(function ($raw) use ($email, $subject, $body, $cc, $bcc): string {
             $e = $this->formatString($this->evaluateFormattedValue($email, $raw) ?? $raw);
             $s = $this->evaluateFormattedValue($subject, $raw);
             $b = $this->evaluateFormattedValue($body, $raw);
@@ -72,23 +75,26 @@ trait HasPayloadFormatters
             if ($s !== null && $s !== '') {
                 $params['subject'] = $this->formatString($s);
             }
+
             if ($b !== null && $b !== '') {
                 $params['body'] = $this->formatString($b);
             }
+
             if ($c !== null && $c !== '') {
                 $params['cc'] = $this->formatString($c);
             }
+
             if ($bc !== null && $bc !== '') {
                 $params['bcc'] = $this->formatString($bc);
             }
 
-            return 'mailto:'.$e.($params ? '?'.http_build_query($params) : '');
+            return 'mailto:'.$e.($params !== [] ? '?'.http_build_query($params) : '');
         });
     }
 
     public function asSms(string|Closure|null $phone = null, string|Closure|null $message = null): static
     {
-        return $this->formatPayloadUsing(function ($raw) use ($phone, $message) {
+        return $this->formatPayloadUsing(function ($raw) use ($phone, $message): string {
             $p = $this->formatString($this->evaluateFormattedValue($phone, $raw) ?? $raw);
             $m = $this->evaluateFormattedValue($message, $raw);
 
@@ -98,7 +104,7 @@ trait HasPayloadFormatters
 
     public function asPhoneNumber(string|Closure|null $phone = null): static
     {
-        return $this->formatPayloadUsing(function ($raw) use ($phone) {
+        return $this->formatPayloadUsing(function ($raw) use ($phone): string {
             $p = $this->formatString($this->evaluateFormattedValue($phone, $raw) ?? $raw);
 
             return 'tel:'.$p;
@@ -112,7 +118,7 @@ trait HasPayloadFormatters
         string|Closure|null $message = null,
         string|Closure|null $returnAddress = null
     ): static {
-        return $this->formatPayloadUsing(function ($raw) use ($address, $amount, $label, $message, $returnAddress) {
+        return $this->formatPayloadUsing(function ($raw) use ($address, $amount, $label, $message, $returnAddress): string {
             $addr = trim($this->formatString($this->evaluateFormattedValue($address, $raw) ?? $raw));
             $amt = $this->evaluateFormattedValue($amount, $raw);
             $lbl = $this->evaluateFormattedValue($label, $raw);
@@ -123,17 +129,20 @@ trait HasPayloadFormatters
             if ($amt !== null && $amt !== '') {
                 $params['amount'] = $this->formatString($amt);
             }
+
             if ($lbl !== null && $lbl !== '') {
                 $params['label'] = $this->formatString($lbl);
             }
+
             if ($msg !== null && $msg !== '') {
                 $params['message'] = $this->formatString($msg);
             }
+
             if ($ret !== null && $ret !== '') {
                 $params['r'] = $this->formatString($ret);
             }
 
-            $query = $params ? '?'.http_build_query($params, '', '&', PHP_QUERY_RFC3986) : '';
+            $query = $params !== [] ? '?'.http_build_query($params, '', '&', PHP_QUERY_RFC3986) : '';
 
             return 'bitcoin:'.$addr.$query;
         });
@@ -153,7 +162,7 @@ trait HasPayloadFormatters
         string|Closure|null $address = null,
         float|string|Closure|null $amount = null
     ): static {
-        return $this->formatPayloadUsing(function ($raw) use ($address, $amount) {
+        return $this->formatPayloadUsing(function ($raw) use ($address, $amount): string {
             $addr = trim($this->formatString($this->evaluateFormattedValue($address, $raw) ?? $raw));
             $amt = $this->evaluateFormattedValue($amount, $raw);
 
@@ -179,7 +188,7 @@ trait HasPayloadFormatters
         float|string|Closure|null $amount = null,
         array|Closure $extra = []
     ): static {
-        return $this->formatPayloadUsing(function ($raw) use ($type, $address, $amount, $extra) {
+        return $this->formatPayloadUsing(function ($raw) use ($type, $address, $amount, $extra): string {
             $scheme = strtolower($this->formatString($this->evaluateFormattedValue($type, $raw)));
             $addr = trim($this->formatString($this->evaluateFormattedValue($address, $raw) ?? $raw));
             $amt = $this->evaluateFormattedValue($amount, $raw);
@@ -190,6 +199,7 @@ trait HasPayloadFormatters
             if ($amt !== null && $amt !== '') {
                 $params['amount'] = $this->formatString($amt);
             }
+
             foreach ($extraParams as $k => $v) {
                 if ($v !== null && $v !== '') {
                     $keyStr = is_string($k) ? $k : (string) $k;
@@ -197,7 +207,7 @@ trait HasPayloadFormatters
                 }
             }
 
-            $query = $params ? '?'.http_build_query($params, '', '&', PHP_QUERY_RFC3986) : '';
+            $query = $params !== [] ? '?'.http_build_query($params, '', '&', PHP_QUERY_RFC3986) : '';
 
             return $scheme.':'.$addr.$query;
         });
@@ -230,7 +240,7 @@ trait HasPayloadFormatters
             $name, $phone, $email, $company, $job, $firstName, $lastName,
             $address, $url, $note, $birthday, $version, $emailWork, $emailHome,
             $phoneWork, $phoneHome, $phoneCell, $role
-        ) {
+        ): string {
             $evaluatedName = $this->evaluateFormattedValue($name, $raw);
 
             // Support passing associative array of vCard attributes
@@ -361,7 +371,7 @@ trait HasPayloadFormatters
         string|Closure|null $address = null,
         string|Closure|null $note = null
     ): static {
-        return $this->formatPayloadUsing(function ($raw) use ($name, $phone, $email, $url, $address, $note) {
+        return $this->formatPayloadUsing(function ($raw) use ($name, $phone, $email, $url, $address, $note): string {
             $evaluatedName = $this->evaluateFormattedValue($name, $raw);
 
             if (is_array($evaluatedName)) {
@@ -385,15 +395,19 @@ trait HasPayloadFormatters
             if ($p !== null && $p !== '') {
                 $parts[] = 'TEL:'.$this->escapeMeCardValue($this->formatString($p)).';';
             }
+
             if ($e !== null && $e !== '') {
                 $parts[] = 'EMAIL:'.$this->escapeMeCardValue($this->formatString($e)).';';
             }
+
             if ($u !== null && $u !== '') {
                 $parts[] = 'URL:'.$this->escapeMeCardValue($this->formatString($u)).';';
             }
+
             if ($a !== null && $a !== '') {
                 $parts[] = 'ADR:'.$this->escapeMeCardValue($this->formatString($a)).';';
             }
+
             if ($nt !== null && $nt !== '') {
                 $parts[] = 'NOTE:'.$this->escapeMeCardValue($this->formatString($nt)).';';
             }
@@ -407,7 +421,7 @@ trait HasPayloadFormatters
         float|string|Closure $longitude,
         string|Closure|null $name = null
     ): static {
-        return $this->formatPayloadUsing(function ($raw) use ($latitude, $longitude, $name) {
+        return $this->formatPayloadUsing(function ($raw) use ($latitude, $longitude, $name): string {
             $lat = $this->formatString($this->evaluateFormattedValue($latitude, $raw));
             $lng = $this->formatString($this->evaluateFormattedValue($longitude, $raw));
             $queryName = $this->evaluateFormattedValue($name, $raw);
@@ -436,7 +450,7 @@ trait HasPayloadFormatters
             return $value;
         }
 
-        if (is_scalar($value) || $value instanceof \Stringable) {
+        if (is_scalar($value) || $value instanceof Stringable) {
             return (string) $value;
         }
 

@@ -1,42 +1,44 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Eloquent\Collection;
 use Linkxtr\FilamentQr\Actions\DownloadQrBulkAction;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
 
-it('can initialize download qr bulk action with defaults', function () {
-    $action = DownloadQrBulkAction::make();
+it('can initialize download qr bulk action with defaults', function (): void {
+    $downloadQrBulkAction = DownloadQrBulkAction::make();
 
-    expect($action->getName())->toBe('downloadQrBulk');
-    expect($action->getLabel())->toBe('Download QR Codes');
-    expect($action->getArchiveFilename())->toBe('qrcodes.zip');
-    expect($action->getQrFormat())->toBe('svg');
+    expect($downloadQrBulkAction->getName())->toBe('downloadQrBulk');
+    expect($downloadQrBulkAction->getLabel())->toBe('Download QR Codes');
+    expect($downloadQrBulkAction->getArchiveFilename())->toBe('qrcodes.zip');
+    expect($downloadQrBulkAction->getQrFormat())->toBe('svg');
 });
 
-it('supports custom archive filename and entry filename callback', function () {
-    $action = DownloadQrBulkAction::make()
+it('supports custom archive filename and entry filename callback', function (): void {
+    $downloadQrBulkAction = DownloadQrBulkAction::make()
         ->archiveFilename('custom-export')
-        ->entryFilename(fn ($record, $index, $format) => "item-{$record['id']}.{$format}");
+        ->entryFilename(fn ($record, $index, $format): string => "item-{$record['id']}.{$format}");
 
     $record = ['id' => 99];
 
-    expect($action->getArchiveFilename())->toBe('custom-export.zip');
-    expect($action->resolveEntryFilename($record, 0, 'svg'))->toBe('item-99.svg');
+    expect($downloadQrBulkAction->getArchiveFilename())->toBe('custom-export.zip');
+    expect($downloadQrBulkAction->resolveEntryFilename($record, 0, 'svg'))->toBe('item-99.svg');
 });
 
-it('executes download qr bulk action and returns zip download', function () {
+it('executes download qr bulk action and returns zip download', function (): void {
     $records = new Collection([
         ['id' => 1, 'qr' => 'https://example.com/1'],
         ['id' => 2, 'qr' => 'https://example.com/2'],
     ]);
 
-    $action = DownloadQrBulkAction::make()
+    $downloadQrBulkAction = DownloadQrBulkAction::make()
         ->records($records)
         ->payload(fn ($record) => $record['qr'])
         ->archiveFilename('batch-qrs');
 
-    $response = $action->call();
+    $response = $downloadQrBulkAction->call();
 
     expect($response)->toBeInstanceOf(Response::class);
     expect($response->headers->get('content-type'))->toBe('application/zip');
@@ -82,16 +84,16 @@ it('executes download qr bulk action and returns zip download', function () {
     }
 });
 
-it('bulk action handles empty records gracefully', function () {
+it('bulk action handles empty records gracefully', function (): void {
     $records = new Collection([
         ['id' => 1, 'qr' => null],
     ]);
 
-    $action = DownloadQrBulkAction::make()
+    $downloadQrBulkAction = DownloadQrBulkAction::make()
         ->records($records)
         ->payload(fn ($record) => $record['qr']);
 
-    $response = $action->call();
+    $response = $downloadQrBulkAction->call();
 
     expect($response)->toBeNull();
 });

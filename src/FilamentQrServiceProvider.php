@@ -1,18 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkxtr\FilamentQr;
 
 use Illuminate\Support\ServiceProvider;
+use Linkxtr\FilamentQr\Services\QrCodeRenderer;
 
-class FilamentQrServiceProvider extends ServiceProvider
+final class FilamentQrServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/filament-qr.php', 'filament-qr');
 
-        $this->app->singleton(Services\QrCodeRenderer::class, function () {
-            return new Services\QrCodeRenderer;
-        });
+        $this->app->singleton(QrCodeRenderer::class, fn (): QrCodeRenderer => new QrCodeRenderer);
     }
 
     public function boot(): void

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Linkxtr\FilamentQr\Enums\ErrorCorrectionLevel;
 use Linkxtr\FilamentQr\Enums\EyeStyle;
 use Linkxtr\FilamentQr\Enums\GradientType;
@@ -8,11 +10,11 @@ use Linkxtr\FilamentQr\Enums\QrStyle;
 use Linkxtr\FilamentQr\Services\QrCodeRenderer;
 use Linkxtr\FilamentQr\Tables\Columns\QrCodeColumn;
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->renderer = app(QrCodeRenderer::class);
 });
 
-it('renders qr codes in all supported formats: svg, png, and webp', function () {
+it('renders qr codes in all supported formats: svg, png, and webp', function (): void {
     $svg = $this->renderer->render('https://filamentphp.com', format: 'svg');
     expect($svg)->toBeString()
         ->and($svg)->toContain('<svg')
@@ -27,7 +29,7 @@ it('renders qr codes in all supported formats: svg, png, and webp', function () 
         ->and($webp)->toStartWith('data:image/webp;base64,');
 });
 
-it('renders raw binary output using renderRaw for svg, png, and webp', function () {
+it('renders raw binary output using renderRaw for svg, png, and webp', function (): void {
     $rawSvg = $this->renderer->renderRaw('https://filamentphp.com', format: 'svg');
     expect($rawSvg)->toBeString()
         ->and($rawSvg)->toContain('<svg');
@@ -42,7 +44,7 @@ it('renders raw binary output using renderRaw for svg, png, and webp', function 
         ->and(substr($rawWebp, 8, 4))->toBe('WEBP');
 });
 
-it('embeds custom dpi and resolution settings into raster images', function () {
+it('embeds custom dpi and resolution settings into raster images', function (): void {
     if (! extension_loaded('imagick')) {
         $this->markTestSkipped('Imagick extension not available.');
     }
@@ -51,13 +53,14 @@ it('embeds custom dpi and resolution settings into raster images', function () {
 
     $imagick = new Imagick;
     $imagick->readImageBlob($rawPng);
+
     $res = $imagick->getImageResolution();
 
     // 300 dpi translates to approx 118.11 dots/cm
     expect($res['x'])->toBeGreaterThan(100);
 });
 
-it('supports module styling, eye styles, and internal eye styles', function () {
+it('supports module styling, eye styles, and internal eye styles', function (): void {
     $styledSvg = $this->renderer->render(
         payload: 'https://filamentphp.com',
         format: 'svg',
@@ -71,8 +74,8 @@ it('supports module styling, eye styles, and internal eye styles', function () {
         ->and($styledSvg)->toContain('<svg');
 });
 
-it('supports fluent styling methods on filament qr column', function () {
-    $column = QrCodeColumn::make('test_qr')
+it('supports fluent styling methods on filament qr column', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('test_qr')
         ->qrSize(250)
         ->qrMargin(3)
         ->qrFormat(QrFormat::Webp)
@@ -88,33 +91,33 @@ it('supports fluent styling methods on filament qr column', function () {
         ->qrResolution(300)
         ->qrEncoding('UTF-8');
 
-    expect($column->getQrSize())->toBe(250);
-    expect($column->getQrMargin())->toBe(3);
-    expect($column->getQrFormat())->toBe('webp');
-    expect($column->getQrErrorCorrection())->toBe('H');
-    expect($column->getQrColor())->toBe('#112233');
-    expect($column->getQrBackgroundColor())->toBe('#ffffff');
-    expect($column->getQrGradient())->toBe([
+    expect($qrCodeColumn->getQrSize())->toBe(250);
+    expect($qrCodeColumn->getQrMargin())->toBe(3);
+    expect($qrCodeColumn->getQrFormat())->toBe('webp');
+    expect($qrCodeColumn->getQrErrorCorrection())->toBe('H');
+    expect($qrCodeColumn->getQrColor())->toBe('#112233');
+    expect($qrCodeColumn->getQrBackgroundColor())->toBe('#ffffff');
+    expect($qrCodeColumn->getQrGradient())->toBe([
         'from' => '#ff0000',
         'to' => '#0000ff',
         'type' => 'diagonal',
     ]);
-    expect($column->getQrEyeColors()[0])->toBe([
+    expect($qrCodeColumn->getQrEyeColors()[0])->toBe([
         'inner' => '#ff0000',
         'outer' => '#00ff00',
     ]);
-    expect($column->getQrEyeStyle())->toBe('circle');
-    expect($column->getQrInternalEyeStyle())->toBe('square');
-    expect($column->getQrStyle())->toBe('round');
-    expect($column->getQrStyleSize())->toBe(0.7);
-    expect($column->getQrDpi())->toBe(300);
-    expect($column->getQrResolution())->toBe(300);
-    expect($column->getQrEncoding())->toBe('UTF-8');
+    expect($qrCodeColumn->getQrEyeStyle())->toBe('circle');
+    expect($qrCodeColumn->getQrInternalEyeStyle())->toBe('square');
+    expect($qrCodeColumn->getQrStyle())->toBe('round');
+    expect($qrCodeColumn->getQrStyleSize())->toBe(0.7);
+    expect($qrCodeColumn->getQrDpi())->toBe(300);
+    expect($qrCodeColumn->getQrResolution())->toBe(300);
+    expect($qrCodeColumn->getQrEncoding())->toBe('UTF-8');
 });
 
-it('supports format shortcuts svg, png, and webp', function () {
-    $colSvg = QrCodeColumn::make('c1')->svg();
-    expect($colSvg->getQrFormat())->toBe('svg');
+it('supports format shortcuts svg, png, and webp', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('c1')->svg();
+    expect($qrCodeColumn->getQrFormat())->toBe('svg');
 
     $colPng = QrCodeColumn::make('c2')->png();
     expect($colPng->getQrFormat())->toBe('png');
@@ -123,28 +126,28 @@ it('supports format shortcuts svg, png, and webp', function () {
     expect($colWebp->getQrFormat())->toBe('webp');
 });
 
-it('evaluates closures on styling setters', function () {
-    $column = QrCodeColumn::make('dynamic')
-        ->qrSize(fn () => 180)
-        ->qrMargin(fn () => 2)
-        ->qrColor(fn () => '#445566')
-        ->qrDpi(fn () => 150);
+it('evaluates closures on styling setters', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('dynamic')
+        ->qrSize(fn (): int => 180)
+        ->qrMargin(fn (): int => 2)
+        ->qrColor(fn (): string => '#445566')
+        ->qrDpi(fn (): int => 150);
 
-    expect($column->getQrSize())->toBe(180);
-    expect($column->getQrMargin())->toBe(2);
-    expect($column->getQrColor())->toBe('#445566');
-    expect($column->getQrDpi())->toBe(150);
+    expect($qrCodeColumn->getQrSize())->toBe(180);
+    expect($qrCodeColumn->getQrMargin())->toBe(2);
+    expect($qrCodeColumn->getQrColor())->toBe('#445566');
+    expect($qrCodeColumn->getQrDpi())->toBe(150);
 });
 
-it('resolves filament theme color tokens primary, success, and danger to hex colors', function () {
-    $column = QrCodeColumn::make('token_qr');
+it('resolves filament theme color tokens primary, success, and danger to hex colors', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('token_qr');
 
-    $primaryHex = $column->resolveColorToken('primary');
-    $successHex = $column->resolveColorToken('success');
-    $dangerHex = $column->resolveColorToken('danger');
-    $warningHex = $column->resolveColorToken('warning');
-    $infoHex = $column->resolveColorToken('info');
-    $grayHex = $column->resolveColorToken('gray');
+    $primaryHex = $qrCodeColumn->resolveColorToken('primary');
+    $successHex = $qrCodeColumn->resolveColorToken('success');
+    $dangerHex = $qrCodeColumn->resolveColorToken('danger');
+    $warningHex = $qrCodeColumn->resolveColorToken('warning');
+    $infoHex = $qrCodeColumn->resolveColorToken('info');
+    $grayHex = $qrCodeColumn->resolveColorToken('gray');
 
     expect($primaryHex)->toStartWith('#');
     expect($successHex)->toStartWith('#');
@@ -154,17 +157,17 @@ it('resolves filament theme color tokens primary, success, and danger to hex col
     expect($grayHex)->toStartWith('#');
 });
 
-it('resolves color tokens with specific shade notation', function () {
-    $column = QrCodeColumn::make('shade_qr');
+it('resolves color tokens with specific shade notation', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('shade_qr');
 
-    $shadeHex = $column->resolveColorToken('primary-600');
+    $shadeHex = $qrCodeColumn->resolveColorToken('primary-600');
     expect($shadeHex)->toStartWith('#');
 });
 
-it('preserves existing hex and rgb colors during token resolution', function () {
-    $column = QrCodeColumn::make('hex_qr');
+it('preserves existing hex and rgb colors during token resolution', function (): void {
+    $qrCodeColumn = QrCodeColumn::make('hex_qr');
 
-    expect($column->resolveColorToken('#123456'))->toBe('#123456');
-    expect($column->resolveColorToken('#abc'))->toBe('#abc');
-    expect($column->resolveColorToken('rgb(10, 20, 30)'))->toBe('rgb(10, 20, 30)');
+    expect($qrCodeColumn->resolveColorToken('#123456'))->toBe('#123456');
+    expect($qrCodeColumn->resolveColorToken('#abc'))->toBe('#abc');
+    expect($qrCodeColumn->resolveColorToken('rgb(10, 20, 30)'))->toBe('rgb(10, 20, 30)');
 });

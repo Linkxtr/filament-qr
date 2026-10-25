@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Linkxtr\FilamentQr\Concerns;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Linkxtr\FilamentQr\Services\QrCodeRenderer;
+use Stringable;
 
 trait HasQrInteractions
 {
@@ -46,7 +49,7 @@ trait HasQrInteractions
         if ($this->downloadFilename !== null) {
             $evaluated = $this->evaluate($this->downloadFilename);
 
-            return is_string($evaluated) ? $evaluated : (is_scalar($evaluated) || $evaluated instanceof \Stringable ? (string) $evaluated : 'qr-code');
+            return is_string($evaluated) ? $evaluated : (is_scalar($evaluated) || $evaluated instanceof Stringable ? (string) $evaluated : 'qr-code');
         }
 
         $record = $this->getRecord();
@@ -58,7 +61,7 @@ trait HasQrInteractions
             $key = 'code';
         }
 
-        $keyString = is_string($key) ? $key : (is_scalar($key) || $key instanceof \Stringable ? (string) $key : 'code');
+        $keyString = is_string($key) ? $key : (is_scalar($key) || $key instanceof Stringable ? (string) $key : 'code');
 
         return "qr-{$keyString}";
     }
@@ -112,7 +115,7 @@ trait HasQrInteractions
             return $evaluated;
         }
 
-        if (is_scalar($evaluated) || $evaluated instanceof \Stringable) {
+        if (is_scalar($evaluated) || $evaluated instanceof Stringable) {
             return (string) $evaluated;
         }
 
@@ -145,7 +148,7 @@ trait HasQrInteractions
             return $evaluated;
         }
 
-        if (is_scalar($evaluated) || $evaluated instanceof \Stringable) {
+        if (is_scalar($evaluated) || $evaluated instanceof Stringable) {
             return (string) $evaluated;
         }
 
@@ -160,10 +163,10 @@ trait HasQrInteractions
             return null;
         }
 
-        /** @var QrCodeRenderer $renderer */
-        $renderer = app(QrCodeRenderer::class);
+        /** @var QrCodeRenderer $qrCodeRenderer */
+        $qrCodeRenderer = app(QrCodeRenderer::class);
 
-        return $renderer->render(
+        return $qrCodeRenderer->render(
             payload: $payload,
             size: $this->getPreviewSize(),
             margin: $this->getQrMargin(),

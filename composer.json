@@ -1,6 +1,7 @@
 {
   "name": "linkxtr/filament-qr",
   "description": "A clean, modern Filament plugin to generate, render, style, and export QR codes powered by linkxtr/laravel-qrcode",
+  "license": "MIT",
   "keywords": [
     "linkxtr",
     "laravel",
@@ -9,8 +10,6 @@
     "qrcode",
     "qr-code"
   ],
-  "homepage": "https://github.com/Linkxtr/filament-qr",
-  "license": "MIT",
   "authors": [
     {
       "name": "Khaled Sadek",
@@ -18,21 +17,31 @@
       "homepage": "https://github.com/khaled-sadek"
     }
   ],
+  "homepage": "https://github.com/Linkxtr/filament-qr",
   "require": {
-    "php": "^8.2 || ^8.3 || ^8.4",
-    "filament/filament": "^3.0",
-    "illuminate/contracts": "^10.0 || ^11.0",
-    "illuminate/support": "^10.0 || ^11.0",
+    "php": "^8.2",
+    "filament/filament": "^3.0 || ^4.0 || ^5.0",
+    "illuminate/contracts": "^12.0 || ^13.0",
+    "illuminate/support": "^12.0 || ^13.0",
     "linkxtr/laravel-qrcode": "^3.0"
   },
   "require-dev": {
-    "orchestra/testbench": "^9.0 || ^10.0",
-    "pestphp/pest": "^3.0",
-    "pestphp/pest-plugin-laravel": "^3.0",
-    "pestphp/pest-plugin-type-coverage": "^3.0",
+    "ergebnis/composer-normalize": "^2.54",
+    "laravel/pao": "^1.1",
+    "laravel/pint": "^1.0",
+    "orchestra/testbench": "^10.0 || ^11.0",
+    "pestphp/pest": "^3.0 || ^4.0",
+    "pestphp/pest-plugin-laravel": "^3.0 || ^4.0",
+    "pestphp/pest-plugin-type-coverage": "^3.0 || ^4.0",
     "phpstan/phpstan": "^2.0",
-    "laravel/pint": "^1.0"
+    "rector/rector": "^1.0 || ^2.0"
   },
+  "suggest": {
+    "ext-gd": "Required to generate PNG and WebP images via GD",
+    "ext-imagick": "Required to generate PNG and WebP images via Imagick"
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
   "autoload": {
     "psr-4": {
       "Linkxtr\\FilamentQr\\": "src/"
@@ -43,23 +52,13 @@
       "Linkxtr\\FilamentQr\\Tests\\": "tests/"
     }
   },
-  "scripts": {
-    "lint": "pint",
-    "test:lint": "pint --test",
-    "test:types": "phpstan analyse --ansi --debug",
-    "test:unit": "pest --parallel --colors=always",
-    "test": [
-      "@test:lint",
-      "@test:types",
-      "@test:unit"
-    ]
-  },
   "config": {
-    "sort-packages": true,
     "allow-plugins": {
+      "ergebnis/composer-normalize": true,
       "pestphp/pest-plugin": true,
       "phpstan/extension-installer": true
-    }
+    },
+    "sort-packages": true
   },
   "extra": {
     "laravel": {
@@ -68,6 +67,24 @@
       ]
     }
   },
-  "minimum-stability": "dev",
-  "prefer-stable": true
+  "scripts": {
+    "lint": "pint --parallel",
+    "mutate": [
+      "Composer\\Config::disableProcessTimeout",
+      "pest --parallel --mutate --covered-only"
+    ],
+    "refactor": "rector",
+    "test": [
+      "@test:refactor",
+      "@test:lint",
+      "@test:types",
+      "@test:type-coverage",
+      "@test:unit"
+    ],
+    "test:lint": "pint --parallel --test",
+    "test:refactor": "rector --dry-run",
+    "test:type-coverage": "pest --type-coverage --compact --coverage --min=100",
+    "test:types": "phpstan analyse --ansi",
+    "test:unit": "pest --parallel --colors=always --coverage --min=86.5 --coverage-clover build/logs/clover.xml"
+  }
 }
