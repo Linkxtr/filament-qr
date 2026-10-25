@@ -21,8 +21,8 @@
   "require": {
     "php": "^8.2 || ^8.3 || ^8.4",
     "filament/filament": "^3.0",
-    "illuminate/contracts": "^10.0 || ^11.0",
-    "illuminate/support": "^10.0 || ^11.0",
+    "illuminate/contracts": "11.*",
+    "illuminate/support": "11.*",
     "linkxtr/laravel-qrcode": "^3.0"
   },
   "require-dev": {
